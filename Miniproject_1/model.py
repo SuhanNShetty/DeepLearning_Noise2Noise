@@ -74,7 +74,7 @@ class Model():
 
         pass
 
-
+    
 
     def load_pretrained_model(self ) -> None:
         ## This loads the parameters saved in bestmodel.pth into the model
