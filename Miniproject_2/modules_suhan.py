@@ -50,14 +50,15 @@ class SGD:
 
 
 class Sequential:
+	'''
+		A sequence of layers
+	'''
 	def __init__(self, *args):
-		self.params = []
 		self.set_sequential(args)
 
 	def forward(self, x, params):
 		for tfm in self.transforms:
 			x = tfm.forward(x)
-			self.params
 		return x
 
 	def backward(self, grad_out):
@@ -65,26 +66,6 @@ class Sequential:
 			Collect the gradient by backpropogation 
 		'''
 		for tfm in self.transforms[::-1]:
-			grad_out, grad_params = tfm.backward(grad_out)	
-			tfm.params[0][1] = grad_params[0] # To do: use chain rule
-			tfm.params[1][1] = grad_params[1]
-		return grad_out
+			grad_out, grad_weight, grad_bias = tfm.backward(grad_out)	
+		return grad_out # gradient w.r.t input
 
-
-
-class LinearLayer:
-	'''
-		y = xA' + b
-	'''
-	def __init__(self, in_features, out_features, bias=True, device=None):
-		self.weight = torch.empty(1,in_features,out_features).randn_().to(device)
-		self.bias = torch.zeros((1,1,out_features)).to(device)
-		self.params = ((self.weight,0*self.weight),(self.bias,0*self.bias))
-
-	def forward(self,x):
-		y = x@self.weight.flip(1,2) + self.bias
-		return y 
-
-	def backward(self,grad_param_next):
-		# return the output of chain rule
-		pass
