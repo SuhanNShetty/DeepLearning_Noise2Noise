@@ -56,7 +56,7 @@ class Sequential:
 	def __init__(self, *args):
 		self.set_sequential(args)
 
-	def forward(self, x, params):
+	def forward(self, x):
 		for tfm in self.transforms:
 			x = tfm.forward(x)
 		return x
