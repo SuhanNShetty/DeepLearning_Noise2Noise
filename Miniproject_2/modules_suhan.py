@@ -54,7 +54,7 @@ class Sequential:
 		A sequence of layers
 	'''
 	def __init__(self, *args):
-		self.set_sequential(args)
+		pass # consider skip connection
 
 	def forward(self, x):
 		for tfm in self.transforms:
