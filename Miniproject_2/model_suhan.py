@@ -24,7 +24,7 @@ class Model():
                             self.tconv1, self.relu,
                             self.tconv2, self.sigmoid)
         # Optimizer
-        self.optimizer = SGD(self.model,lr=1e-6, use_momentum=False, damping=0.) 
+        self.optimizer = SGD(self.model,lr=1e-3, use_momentum=False, damping=0.) 
 
         # Loss function
         self.mse = MSE()
@@ -63,9 +63,9 @@ class Model():
                 loss_batch = self.mse.forward(output, target[i])
                 self.loss_train[e] += loss_batch
                 self.optimizer.zero_grad()
-                self.mse.backward()
+                self.model.backward(self.mse.backward()) # update the gradients
                 self.optimizer.step()  
-                
+            print("loss:",self.loss_train[e])    
             for j in range(len(valid_input)):
                 output = self.model.forward(valid_input[j])
                 loss_batch = self.mse.forward(output, target[i])

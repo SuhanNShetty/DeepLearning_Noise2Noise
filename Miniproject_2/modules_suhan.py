@@ -12,7 +12,8 @@ class SGD(object):
         Disclaimer: We used https://github.com/pytorch/pytorch/blob/cd9b27231b51633e76e28b6a34002ab83b0660fc/torch/optim/sgd.py#L63
         as reference for writing our version
     '''
-    def __init__(self, sqn_block, lr=1e-6, use_momentum=False, damping=0.):
+    def __init__(self, sqn_block,  lr=1e-3, use_momentum=False, damping=0.):
+        
         self.lr = lr
         # momentum params
         self.damping = damping
@@ -42,13 +43,15 @@ class SGD(object):
             Take one gradient step 
             To Do: Check if the original tfm are updated
         '''
+
         for i,tfm in enumerate(self.sqn_block.transforms):
             # set momentum
             self.velocity_weight[i] = self.damping*self.velocity_weight[i] + tfm.grad_weight # weight
             self.velocity_bias[i] = self.damping*self.velocity_bias[i] + tfm.grad_bias  # bias
             # update weight and bias:
-            tfm.weight -= self.lr*self.velocity_weight[i] # weight
-            tfm.bias -= self.lr*self.velocity_bias[i] # bias
+            self.sqn_block.transforms[i].weight -= self.lr*self.velocity_weight[i] # weight
+            self.sqn_block.transforms[i].bias -= self.lr*self.velocity_bias[i] # bias
+            # print(self.sqn_block.transforms[i].weight.norm())
             # # zero the grad:
             # tfm.params.grad_weight.fill_(0.) #weight
             # tfm.params.grad_bias.fill_(0.) # bias
@@ -97,7 +100,8 @@ class Sequential(object):
             Collect the gradient by backpropogation 
         '''
         for tfm in self.transforms[::-1]:
-            grad_out = tfm.backward(grad_out)   
+            grad_out = tfm.backward(grad_out) 
+
         return grad_out # gradient w.r.t input
 
 ############################################################################
@@ -118,6 +122,7 @@ class ReLU(object) :
         self.input = input
         self.positif_mask = (input > 0)
         return self.positif_mask*(input)
+
     def backward(self, gradwrtoutput) :
         self.grad_in = self.positif_mask.int()*gradwrtoutput
         return self.grad_in
@@ -297,9 +302,9 @@ class ConvTranspose2d(object):
         self.dL_dB = dL_dO_exp @ dO_dB_exp
 
         # save the params
-        self.grad_in = dL_dX
-        self.grad_weight = dL_dF
-        self.grad_bias = dL_dB
+        self.grad_in = self.dL_dX
+        self.grad_weight = self.dL_dF
+        self.grad_bias = self.dL_dB
         
         return self.dL_dX
 
