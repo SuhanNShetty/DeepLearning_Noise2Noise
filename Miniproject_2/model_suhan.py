@@ -15,14 +15,12 @@ class Model():
         self.conv2 = Conv2d(self.m, 2*self.m, kernel_size = (self.k,self.k), stride=1, padding=0,device=device)
         self.tconv1 = ConvTranspose2d(2*self.m, self.m, kernel_size = (self.k,self.k), stride=1, padding=0,device=device)
         self.tconv2 = ConvTranspose2d(self.m, self.in_ch, kernel_size = (self.k,self.k), stride=1, padding=0,device=device)        
-        self.relu = ReLU()
-        self.sigmoid = Sigmoid()
-
+        
         # Setup the model
-        self.model = Sequential(self.conv1,self.relu,
-                            self.conv2,self.relu,
-                            self.tconv1, self.relu,
-                            self.tconv2, self.sigmoid)
+        self.model = Sequential(self.conv1,ReLU(),
+                            self.conv2,ReLU(),
+                            self.tconv1,ReLU(),
+                            self.tconv2,Sigmoid())
         # Optimizer
         self.optimizer = SGD(self.model,lr=1e-3, use_momentum=False, damping=0.) 
 
@@ -65,7 +63,6 @@ class Model():
                 self.optimizer.zero_grad()
                 self.model.backward(self.mse.backward()) # update the gradients
                 self.optimizer.step()  
-            print("loss:",self.loss_train[e])    
             for j in range(len(valid_input)):
                 output = self.model.forward(valid_input[j])
                 loss_batch = self.mse.forward(output, target[i])

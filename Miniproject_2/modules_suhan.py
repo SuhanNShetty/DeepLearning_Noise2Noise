@@ -46,11 +46,13 @@ class SGD(object):
 
         for i,tfm in enumerate(self.sqn_block.transforms):
             # set momentum
+            # print("sgd, tfm: ",tfm.name)
             self.velocity_weight[i] = self.damping*self.velocity_weight[i] + tfm.grad_weight # weight
-            self.velocity_bias[i] = self.damping*self.velocity_bias[i] + tfm.grad_bias  # bias
             # update weight and bias:
-            self.sqn_block.transforms[i].weight -= self.lr*self.velocity_weight[i] # weight
-            self.sqn_block.transforms[i].bias -= self.lr*self.velocity_bias[i] # bias
+            self.sqn_block.transforms[i].weight -= self.lr*self.velocity_weight[i] # weight update
+            if tfm.use_bias:
+                self.velocity_bias[i] = self.damping*self.velocity_bias[i] + tfm.grad_bias  # bias
+                self.sqn_block.transforms[i].bias -= self.lr*self.velocity_bias[i] # bias update
             # print(self.sqn_block.transforms[i].weight.norm())
             # # zero the grad:
             # tfm.params.grad_weight.fill_(0.) #weight
@@ -100,6 +102,7 @@ class Sequential(object):
             Collect the gradient by backpropogation 
         '''
         for tfm in self.transforms[::-1]:
+            # print("Sequential backward:",tfm.name)
             grad_out = tfm.backward(grad_out) 
 
         return grad_out # gradient w.r.t input
@@ -112,6 +115,7 @@ class ReLU(object) :
         self.params = ()
         self.weight = torch.tensor([0.]) # just for placeholding
         self.bias = torch.tensor([0.])
+        self.use_bias = False
         self.grad_weight = torch.tensor([0.]) # just for placeholding
         self.grad_bias = torch.tensor([0.])
 
@@ -137,6 +141,7 @@ class Sigmoid(object) :
         self.params = ()
         self.weight = torch.tensor([0.]) # just for placeholding
         self.bias = torch.tensor([0.])
+        self.use_bias = False
         self.grad_weight = torch.tensor([0.]) # just for placeholding
         self.grad_bias = torch.tensor([0.])
 
@@ -167,7 +172,7 @@ class Conv2d(object):
         self.stride = stride
         self.padding = padding
         self.kernel = empty(out_ch, in_ch, self.k, self.k).normal_().to(self.device)
-        self.bias = empty(out_ch).normal_() if use_bias else torch.zeros(out_ch).to(self.device)
+        self.bias = (empty(out_ch).normal_() if use_bias else torch.zeros(out_ch)).to(self.device)
 
         self.weight = self.kernel
         self.grad_weight = 0*self.weight
@@ -175,7 +180,8 @@ class Conv2d(object):
 
     def zero_grad(self):
         self.grad_weight.fill_(0.)
-        self.grad_bias.fill_(0)
+        if self.use_bias:
+            self.grad_bias.fill_(0)
 
 
     def forward(self, x): 
@@ -224,8 +230,8 @@ class Conv2d(object):
 
         # save the params
         self.grad_in = dL_dX
-        self.grad_weight = dL_dF
-        self.grad_bias = dL_dB
+        self.grad_weight = self.dL_dF
+        self.grad_bias = self.dL_dB
         
         return dL_dX
         
@@ -248,7 +254,7 @@ class ConvTranspose2d(object):
         self.stride = stride
         self.padding = padding
         self.kernel = empty(in_ch, out_ch, self.k_1, self.k_2).normal_().to(self.device)
-        self.bias = empty(out_ch).normal_() if use_bias else 0*empty(out_ch).to(self.device)
+        self.bias = (empty(out_ch).normal_() if use_bias else 0*empty(out_ch)).to(self.device)
 
         self.weight = self.kernel
         self.grad_weight = 0*self.weight
@@ -256,7 +262,8 @@ class ConvTranspose2d(object):
 
     def zero_grad(self):
         self.grad_weight.fill_(0.)
-        self.grad_bias.fill_(0)
+        if self.use_bias:
+            self.grad_bias.fill_(0)
 
 
     def forward(self, x):
