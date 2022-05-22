@@ -24,8 +24,8 @@ class Model():
                             self.tconv1, self.relu,
                             self.tconv2, self.sigmoid)
         # Optimizer
-        self.optimizer = SGD(self.model,lr=1e-6, use_momentum=False, damping=0.) #torch.optim.Adam(self.model.parameters(), lr = 1e-2)
-        
+        self.optimizer = SGD(self.model,lr=1e-6, use_momentum=False, damping=0.) 
+
         # Loss function
         self.mse = MSE()
         
@@ -65,7 +65,7 @@ class Model():
                 self.loss_train[e] += loss_batch
                 self.optimizer.zero_grad()
                 self.mse.backward()
-                self.optimizer.step()
+                self.optimizer.step()  
                 
             for j in range(len(valid_input)):
                 output = self.model.forward(valid_input[j])

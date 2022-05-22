@@ -44,9 +44,9 @@ class SGD(object):
 			# update weight and bias:
 			tfm.params.weight -= self.lr*self.velocity[i][0] # weight
 			tfm.params.bias -= self.lr*self.velocity[i][1] # bias
-			# zero the grad:
-			tfm.params.grad_weight.fill_(0.) #weight
-			tfm.params.grad_bias.fill_(0.) # bias
+			# # zero the grad:
+			# tfm.params.grad_weight.fill_(0.) #weight
+			# tfm.params.grad_bias.fill_(0.) # bias
 
 ############################################################################
 
