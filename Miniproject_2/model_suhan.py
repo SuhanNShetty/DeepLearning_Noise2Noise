@@ -11,7 +11,7 @@ class Model():
         self.k = 3
         
         # Instantiate elements of the model
-        self.conv1 = nConv2d(in_ch,m, kernel_size = k, stride=1, padding=0, device=device)
+        self.conv1 = Conv2d(in_ch,m, kernel_size = k, stride=1, padding=0, device=device)
         self.conv2 = Conv2d(m, m*2, kernel_size = k, stride=1, padding=0,device=device)
         self.tconv1 = ConvTranspose2d(m*2, m, kernel_size = k, stride=1, padding=0,device=device)
         self.tconv2 = ConvTranspose2d(m, in_ch, kernel_size = k, stride=1, padding=0,device=device)        
