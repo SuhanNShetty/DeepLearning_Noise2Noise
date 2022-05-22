@@ -23,8 +23,8 @@ class Net(nn.Module):
         return x
         
 class Model():
-    def __init__(self):
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    def __init__(self, device='cpu'):
+        self.device=device
         self.batch_size = 50
         self.in_ch = 3
         self.m = 32

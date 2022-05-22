@@ -3,18 +3,18 @@ from tqdm import tqdm
 from modules_suhan import *
         
 class Model():
-    def __init__(self, device):
-        self.device = device
+    def __init__(self):
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.batch_size = 50
         self.in_ch = 3
         self.m = 32
         self.k = 3
         
         # Instantiate elements of the model
-        self.conv1 = Conv2d(self.in_ch,self.m, kernel_size = (self.k,self.k), stride=1, padding=0, device=device)
-        self.conv2 = Conv2d(self.m, 2*self.m, kernel_size = (self.k,self.k), stride=1, padding=0,device=device)
-        self.tconv1 = ConvTranspose2d(2*self.m, self.m, kernel_size = (self.k,self.k), stride=1, padding=0,device=device)
-        self.tconv2 = ConvTranspose2d(self.m, self.in_ch, kernel_size = (self.k,self.k), stride=1, padding=0,device=device)        
+        self.conv1 = Conv2d(in_ch,m, kernel_size = k, stride=1, padding=0, device=device)
+        self.conv2 = Conv2d(m, m*2, kernel_size = k, stride=1, padding=0,device=device)
+        self.tconv1 = ConvTranspose2d(m*2, m, kernel_size = k, stride=1, padding=0,device=device)
+        self.tconv2 = ConvTranspose2d(m, in_ch, kernel_size = k, stride=1, padding=0,device=device)        
         self.relu = ReLU()
         self.sigmoid = Sigmoid()
 
@@ -58,9 +58,10 @@ class Model():
         self.loss_valid = torch.zeros(num_epochs, device = self.device)
         
         for e in tqdm(range(num_epochs)):
+            self.model.train()
             for i in range(len(input)):
                 output = self.model.forward(input[i])
-                loss_batch = self.mse.forward(output, target[i])
+                loss_batch = self.mse(output, target[i])
                 self.loss_train[e] += loss_batch
                 self.optimizer.zero_grad()
                 self.mse.backward()
@@ -68,7 +69,7 @@ class Model():
                 
             for j in range(len(valid_input)):
                 output = self.model.forward(valid_input[j])
-                loss_batch = self.mse.forward(output, target[i])
+                loss_batch = self.mse(output, target[i])
                 self.loss_valid[e] += loss_batch
                                                                         
 

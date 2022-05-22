@@ -1,52 +1,57 @@
 # Acceptable imports for project
-from torch import empty , cat , arange, ceil
+from torch import empty , cat , arange
+from math import ceil
+import math
 from torch.nn.functional import fold , unfold
 import torch
 
 ############################################################################
 class SGD(object):
-	'''
-		Updates the learning parameters
-		Disclaimer: We used https://github.com/pytorch/pytorch/blob/cd9b27231b51633e76e28b6a34002ab83b0660fc/torch/optim/sgd.py#L63
-		as reference for writing our version
-	'''
-	def __init__(self, sqn_block, lr=1e-6, use_momentum=False, damping=0.):
-		self.lr = lr
-		# momentum params
-		self.damping = damping
-		self.sqn_block = sqn_block
-		if use_momentum is True:
-			self.set_velocity()
-			if damping < 0 :
-				raise ValueError("Damping can not be < 0 for SGD with momentum")	
+    '''
+        Updates the learning parameters
+        Disclaimer: We used https://github.com/pytorch/pytorch/blob/cd9b27231b51633e76e28b6a34002ab83b0660fc/torch/optim/sgd.py#L63
+        as reference for writing our version
+    '''
+    def __init__(self, sqn_block, lr=1e-6, use_momentum=False, damping=0.):
+        self.lr = lr
+        # momentum params
+        self.damping = damping
+        self.sqn_block = sqn_block
+        if use_momentum is True:
+            self.set_velocity()
+            if damping < 0 :
+                raise ValueError("Damping can not be < 0 for SGD with momentum")
+        self.set_velocity()    
 
-	def set_velocity(self):
-		'''
-			Initialize velocity for momentum
-		'''
-		self.velocity = []
-		for tfm in self.sqn_block.transforms:
-			self.velocity.append((0*tfm.params.grad_weight,0*tfm.params.grad_bias))
+    def set_velocity(self):
+        '''
+            Initialize velocity for momentum
+        '''
+        self.velocity_weight = []
+        self.velocity_bias = []
+        for tfm in self.sqn_block.transforms:
+            self.velocity_weight.append(0.*tfm.grad_weight)
+            self.velocity_bias.append(0.*tfm.grad_bias)
 
     def zero_grad(self):
         self.sqn_block.zero_grad()
 
 
-	def step(self):
-		'''
-			Take one gradient step 
-			To Do: Check if the original tfm are updated
-		'''
-		for i,tfm in enumerate(self.sqn_block.transforms):
-			# set momentum
-			self.velocity[i][0] = self.damping*self.velocity[i][0] + tfm.params[i].grad_weight # weight
-			self.velocity[i][1] = self.damping*self.velocity[i][1] + tfm.params[i].grad_bias  # bias
-			# update weight and bias:
-			tfm.params.weight -= self.lr*self.velocity[i][0] # weight
-			tfm.params.bias -= self.lr*self.velocity[i][1] # bias
-			# # zero the grad:
-			# tfm.params.grad_weight.fill_(0.) #weight
-			# tfm.params.grad_bias.fill_(0.) # bias
+    def step(self):
+        '''
+            Take one gradient step 
+            To Do: Check if the original tfm are updated
+        '''
+        for i,tfm in enumerate(self.sqn_block.transforms):
+            # set momentum
+            self.velocity_weight[i] = self.damping*self.velocity_weight[i] + tfm.grad_weight # weight
+            self.velocity_bias[i] = self.damping*self.velocity_bias[i] + tfm.grad_bias  # bias
+            # update weight and bias:
+            tfm.weight -= self.lr*self.velocity_weight[i] # weight
+            tfm.bias -= self.lr*self.velocity_bias[i] # bias
+            # # zero the grad:
+            # tfm.params.grad_weight.fill_(0.) #weight
+            # tfm.params.grad_bias.fill_(0.) # bias
 
 ############################################################################
 
@@ -66,41 +71,49 @@ class MSE(object):
 ############################################################################
 
 class Sequential(object):
-	'''
-		A sequence of layers
-	'''
-	def __init__(self, *args):
-		self.transforms = args
-		# To do: consider skip connection
+    '''
+        A sequence of layers
+    '''
+    def __init__(self, *args):
+        self.transforms = args
+        # To do: consider skip connection
 
     def zero_grad(self):
         '''
             Set gradients to zero
         '''
         for tfm in self.transforms:
-            tfm.params.grad_weight.fill_(0.)
-            tfm.params.grad_bias.fill_(0)
+            tfm.zero_grad()
 
 
-	def forward(self, x):
-		for tfm in self.transforms:
-			x = tfm.forward(x)
-		return x
+    def forward(self, x):
+        for tfm in self.transforms:
+            x = tfm.forward(x)
+        return x
 
-	def backward(self, grad_out):
-		'''
-			grad_out: gradient w.r.t output 
-			Collect the gradient by backpropogation 
-		'''
-		for tfm in self.transforms[::-1]:
-			grad_out = tfm.backward(grad_out)	
-		return grad_out # gradient w.r.t input
+    def backward(self, grad_out):
+        '''
+            grad_out: gradient w.r.t output 
+            Collect the gradient by backpropogation 
+        '''
+        for tfm in self.transforms[::-1]:
+            grad_out = tfm.backward(grad_out)   
+        return grad_out # gradient w.r.t input
 
 ############################################################################
 
 class ReLU(object) :
     def __init__(self):
+        self.name = "ReLU"
         self.params = ()
+        self.weight = torch.tensor([0.]) # just for placeholding
+        self.bias = torch.tensor([0.])
+        self.grad_weight = torch.tensor([0.]) # just for placeholding
+        self.grad_bias = torch.tensor([0.])
+
+    def zero_grad(self):
+        pass 
+
     def forward(self, input) :
         self.input = input
         self.positif_mask = (input > 0)
@@ -109,13 +122,22 @@ class ReLU(object) :
         self.grad_in = self.positif_mask.int()*gradwrtoutput
         return self.grad_in
     def param(self):
-    	return self.params
+        return self.params
 
 ############################################################################
 
 class Sigmoid(object) :
-	def __init__(self):
-		self.params = ()
+    def __init__(self):
+        self.name = "Sigmoid"
+        self.params = ()
+        self.weight = torch.tensor([0.]) # just for placeholding
+        self.bias = torch.tensor([0.])
+        self.grad_weight = torch.tensor([0.]) # just for placeholding
+        self.grad_bias = torch.tensor([0.])
+
+    def zero_grad(self):
+        pass 
+
     def forward(self, input) :
         self.input = input
         self.output = 1/(1 + math.e**(-input))
@@ -130,6 +152,7 @@ class Sigmoid(object) :
 
 class Conv2d(object):
     def __init__(self, in_ch, out_ch, kernel_size = (3,3), padding = 0, stride = 1, use_bias = False, device='cpu'):
+        self.name = "Conv2d"
         self.device =device
         self.in_ch = in_ch
         self.out_ch = out_ch
@@ -141,17 +164,23 @@ class Conv2d(object):
         self.kernel = empty(out_ch, in_ch, self.k, self.k).normal_().to(self.device)
         self.bias = empty(out_ch).normal_() if use_bias else torch.zeros(out_ch).to(self.device)
 
-        self.params.weight = self.kernel
-        self.params.bias = self.bias
-        
+        self.weight = self.kernel
+        self.grad_weight = 0*self.weight
+        self.grad_bias = 0*self.bias
+
+    def zero_grad(self):
+        self.grad_weight.fill_(0.)
+        self.grad_bias.fill_(0)
+
+
     def forward(self, x): 
-    	# Update the kernel and bias
-    	self.kernel = self.params.weight  
-        self.bias = self.params.bias
+        # Update the kernel and bias
+        self.kernel = self.weight  
+        self.bias = self.bias
 
         self.batch_size = x.size(0)
         self.s_in = x.size(-1)
-        self.s_out = (ceil((x.size(-2)-self.k+1+self.padding*2)/(self.stride))).long()
+        self.s_out = int(ceil((x.size(-2)-self.k+1+self.padding*2)/(self.stride)))
         
         X_unf = unfold(x, kernel_size=(self.k, self.k), padding = self.padding, stride = self.stride)
         
@@ -190,19 +219,20 @@ class Conv2d(object):
 
         # save the params
         self.grad_in = dL_dX
-        self.params.grad_weight = dL_dF
-        self.params.grad_bias = dL_dB
+        self.grad_weight = dL_dF
+        self.grad_bias = dL_dB
         
         return dL_dX
         
     def param(self) :
-        return ((self.params.weight,self.params.grad_weight),(self.params.bias, elf.params.grad_bias))
+        return ((self.weight,self.grad_weight),(self.bias, self.grad_bias))
 
 
 ############################################################################
 
-class TransposeConv2d(object):
+class ConvTranspose2d(object):
     def __init__(self, in_ch, out_ch, kernel_size = (3,3), padding = 0, stride = 1, use_bias = False, device='cpu'):
+        self.name = "ConvTranspose2d"
         self.device = device
         self.in_ch = in_ch
         self.out_ch = out_ch
@@ -215,10 +245,19 @@ class TransposeConv2d(object):
         self.kernel = empty(in_ch, out_ch, self.k_1, self.k_2).normal_().to(self.device)
         self.bias = empty(out_ch).normal_() if use_bias else 0*empty(out_ch).to(self.device)
 
+        self.weight = self.kernel
+        self.grad_weight = 0*self.weight
+        self.grad_bias = 0*self.bias
+
+    def zero_grad(self):
+        self.grad_weight.fill_(0.)
+        self.grad_bias.fill_(0)
+
+
     def forward(self, x):
-    	# Update the kernel and bias
-    	self.kernel = self.params.weight  
-        self.bias = self.params.bias
+        # Update the kernel and bias
+        self.kernel = self.weight  
+        self.bias = self.bias
 
         self.x = x
         self.batch_size = x.size(0)
@@ -259,11 +298,11 @@ class TransposeConv2d(object):
 
         # save the params
         self.grad_in = dL_dX
-        self.params.grad_weight = dL_dF
-        self.params.grad_bias = dL_dB
+        self.grad_weight = dL_dF
+        self.grad_bias = dL_dB
         
         return self.dL_dX
 
     def param(self) :
-        return ((self.params.weight,self.params.grad_weight),(self.params.bias, self.params.grad_bias))
+        return ((self.weight,self.grad_weight),(self.bias, self.grad_bias))
 
