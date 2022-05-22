@@ -1,16 +1,17 @@
 import torch 
 from torch import nn
-from tqdm import tqdm
+from tqdm import tqdm 
 
 class Net(nn.Module):
     def __init__(self,in_ch, m, k):
-        super().__init__()
-        
-        self.conv1 = nn.Conv2d(in_ch, m, kernel_size = k, stride=1, padding=0)
+        super().__init__() 
+        self.conv1 = nn.Conv2d(in_ch,m, kernel_size = k, stride=1, padding=0)
         self.conv2 = nn.Conv2d(m, m*2, kernel_size = k, stride=1, padding=0)
         self.tconv1 = nn.ConvTranspose2d(m*2, m, kernel_size = k, stride=1, padding=0)
         self.tconv2 = nn.ConvTranspose2d(m, in_ch, kernel_size = k, stride=1, padding=0)
         
+        self.relu = nn.ReLU()
+        self.relu = nn.ReLU()
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
         
@@ -24,9 +25,9 @@ class Net(nn.Module):
 class Model():
     def __init__(self):
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.batch_size, self.nb_epochs = 50, 1000
+        self.batch_size = 50
         self.in_ch = 3
-        self.m = 16
+        self.m = 32
         self.k = 3
         
         # Instantiate model
@@ -46,33 +47,23 @@ class Model():
         torch.load(self.model,'bestmodel.pth')
     
     def train(self, train_input, train_target, num_epochs):
-        input = train_input.to(self.device).type(torch.float).split(self.batch_size)
-        target = train_target.to(self.device).type(torch.float).split(self.batch_size)
-#         valid_inp = noisy_imgs.to(device).type(torch.float)
-#         valid_target = clean_imgs.to(device).type(torch.float)
+        train_input  = train_input.float()/256
+        train_target = train_target.float()/256
         
-        loss_train = torch.zeros(num_epochs, device = self.device)
-        loss_valid = torch.zeros(num_epochs, device = self.device)
+        train_input  = train_input.to(self.device).type(torch.float).split(self.batch_size)
+        train_target = train_target.to(self.device).type(torch.float).split(self.batch_size)
         
-        for e in tqdm(range(num_epochs)):
-            
-            self.model.train()
-            for i in range(len(input)):
-                output = self.model(input[i])
-                loss_batch = self.mse(output, target[i])
-                loss_train[e] += loss_batch
-                self.optimizer.zero_grad()
-                loss_batch.backward()
-                self.optimizer.step()
-
-    def train_with_scheduler(self, train_input, train_target, valid_input, valid_target, num_epochs):
-        input = train_input.to(self.device).type(torch.float).split(self.batch_size)
-        target = train_target.to(self.device).type(torch.float).split(self.batch_size)
-        valid_inp = valid_input.to(self.device).type(torch.float)
-        valid_target = valid_target.to(self.device).type(torch.float)
+        # split the training set in a training and validation set 
+        split = torch.floor(torch.tensor(len(train_input)/10*9)).int().item()
         
-        loss_train = torch.zeros(num_epochs, device = self.device)
-        loss_valid = torch.zeros(num_epochs, device = self.device)
+        input = train_input[0:split]
+        valid_input = train_input[split:-1]
+        
+        target = train_target[0:split]
+        valid_target = train_target[split:-1]
+        
+        self.loss_train = torch.zeros(num_epochs, device = self.device)
+        self.loss_valid = torch.zeros(num_epochs, device = self.device)
         
         for e in tqdm(range(num_epochs)):
             
@@ -80,17 +71,22 @@ class Model():
             for i in range(len(input)):
                 output = self.model(input[i])
                 loss_batch = self.mse(output, target[i])
-                loss_train[e] += loss_batch
-                loss_batch.backward()
+                self.loss_train[e] += loss_batch
                 self.optimizer.zero_grad()
+                loss_batch.backward()
                 self.optimizer.step()
                 
             self.model.eval()
-            output = self.model(valid_inp)
-            loss_valid[e] = self.mse(valid_inp, valid_target)
-            
-            self.scheduler.step(loss_valid[e])
-            
+            for j in range(len(valid_input)):
+                output = self.model(valid_input[j])
+                loss_batch = self.mse(output, target[i])
+                self.loss_valid[e] += loss_batch
+                                    
+            self.scheduler.step(self.loss_valid[e])
+                                    
+
     def predict(self, test_input):
-        
-        return self.model(test_input.to(self.device))
+        self.model.eval()
+        test_input = test_input.float().to(self.device).type(torch.float)/256
+        test_output = self.model(test_input)*256
+        return test_output.type(torch.ByteTensor)
