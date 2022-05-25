@@ -3,7 +3,6 @@ from torch import empty , cat , arange
 from math import ceil
 import math
 from torch.nn.functional import fold , unfold
-import torch
 
 ############################################################################
 class SGD(object):
@@ -107,11 +106,11 @@ class ReLU(object) :
     def __init__(self):
         self.name = "ReLU"
         self.params = ()
-        self.weight = torch.tensor([0.]) # just for placeholding
-        self.bias = torch.tensor([0.])
+        self.weight = empty(1) # just for placeholding
+        self.bias = empty(1)
         self.use_bias = False
-        self.grad_weight = torch.tensor([0.]) # just for placeholding
-        self.grad_bias = torch.tensor([0.])
+        self.grad_weight = empty(1) # just for placeholding
+        self.grad_bias = empty(1)
 
     def zero_grad(self):
         pass 
@@ -133,11 +132,11 @@ class Sigmoid(object) :
     def __init__(self):
         self.name = "Sigmoid"
         self.params = ()
-        self.weight = torch.tensor([0.]) # just for placeholding
-        self.bias = torch.tensor([0.])
+        self.weight = empty(1) # just for placeholding
+        self.bias = empty(1)
         self.use_bias = False
-        self.grad_weight = torch.tensor([0.]) # just for placeholding
-        self.grad_bias = torch.tensor([0.])
+        self.grad_weight = empty(1) # just for placeholding
+        self.grad_bias = empty(1)
 
     def zero_grad(self):
         pass 
@@ -155,7 +154,7 @@ class Sigmoid(object) :
 ############################################################################
 
 class Conv2d(object):
-    def _init_(self, in_ch, out_ch, kernel_size = (3,3), padding = 0, stride = 1, use_bias = False, device = 'cpu'):
+    def __init__(self, in_ch, out_ch, kernel_size = (3,3), padding = 0, stride = 1, use_bias = False, device = 'cpu'):
         self.name = "Conv2d"
         self.device =device
         self.in_ch = in_ch
@@ -165,8 +164,8 @@ class Conv2d(object):
         self.use_bias = use_bias
         self.stride = stride
         self.padding = padding
-        self.kernel = torch.empty(out_ch, in_ch, self.k, self.k).normal_(0,1/(self.k**2*self.in_ch)).to(self.device)
-        self.bias = torch.empty(out_ch).normal_(0,1) if use_bias else torch.zeros(out_ch).to(self.device)
+        self.kernel = empty(out_ch, in_ch, self.k, self.k).normal_(0,1/(self.k**2*self.in_ch)).to(self.device)
+        self.bias = empty(out_ch).normal_(0,1) if use_bias else 0*empty(out_ch).to(self.device)
 
         
         self.weight = self.kernel
@@ -180,7 +179,7 @@ class Conv2d(object):
         
         self.batch_size = x.size(0)
         self.s_in = x.size(-1)
-        self.s_out = torch.tensor(x.size(-2)-self.k+1+self.padding*2).div(self.stride).ceil().int()
+        self.s_out = int(math.ceil((x.size(-2)-self.k+1+self.padding*2)/(self.stride)))
         
         X_unf = unfold(x, kernel_size=(self.k, self.k), padding = self.padding, stride = self.stride)
         
@@ -213,7 +212,7 @@ class Conv2d(object):
         
         # backward wrt bias
         if self.use_bias:
-            dO_dB_exp = torch.ones(self.batch_size * (self.s_out) * (self.s_out))
+            dO_dB_exp = (1+0*empty(self.batch_size * (self.s_out) * (self.s_out))).to(self.device)
             self.dL_dB = dL_dO_exp @ dO_dB_exp
         else:
             self.dL_dB = None
@@ -232,7 +231,7 @@ class Conv2d(object):
 ############################################################################
 
 class ConvTranspose2d(object):
-    def _init_(self, in_ch, out_ch, kernel_size = (3,3), padding = 0, stride = 1, use_bias = False, device='cpu', output_padding = 0):
+    def __init__(self, in_ch, out_ch, kernel_size = (3,3), padding = 0, stride = 1, use_bias = False, device='cpu', output_padding = 0):
         self.name = "ConvTranspose2d"
         self.device = device
         self.in_ch = in_ch
@@ -291,7 +290,7 @@ class ConvTranspose2d(object):
         self.dL_dF = self.dL_dF_exp.view(self.in_ch, self.out_ch, self.k_1, self.k_2)  # OUT_CH x IN_CH x K x K
         
         dL_dO_exp = dL_dO.transpose(0,1).reshape(self.out_ch, -1)
-        dO_dB_exp = 1+0*empty(self.batch_size * (self.o1) * (self.o2))
+        dO_dB_exp = (1+0*empty(self.batch_size * (self.o1) * (self.o2))).to(self.device)
         self.dL_dB = dL_dO_exp @ dO_dB_exp
         
         self.grad_in = dL_dX
