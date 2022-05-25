@@ -1,15 +1,16 @@
 import torch 
 from torch import nn
+from torch.nn import Conv2d, ConvTranspose2d
 from tqdm import tqdm 
 from torch.profiler import profile, record_function, ProfilerActivity
 
 class Net(nn.Module):
     def __init__(self,in_ch, m, k):
         super().__init__() 
-        self.conv1 = nn.Conv2d(in_ch,m, kernel_size = k, stride=2, padding=1)
-        self.conv2 = nn.Conv2d(m, m*2, kernel_size = k, stride=2, padding=1)
-        self.tconv1 = nn.ConvTranspose2d(m*2, m, kernel_size = k, stride=2, padding=1, output_padding=1)
-        self.tconv2 = nn.ConvTranspose2d(m, in_ch, kernel_size = k, stride=2, padding=1, output_padding=1)
+        self.conv1 = Conv2d(in_ch,m, kernel_size = k, stride=2, padding=1)
+        self.conv2 = Conv2d(m, m*2, kernel_size = k, stride=2, padding=1)
+        self.tconv1 = ConvTranspose2d(m*2, m, kernel_size = k, stride=2, padding=1, output_padding=1)
+        self.tconv2 = ConvTranspose2d(m, in_ch, kernel_size = k, stride=2, padding=1, output_padding=1)
         
         self.relu = nn.ReLU()
         self.relu = nn.ReLU()

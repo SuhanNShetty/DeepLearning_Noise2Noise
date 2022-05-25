@@ -9,23 +9,21 @@ import torch
 class SGD(object):
     '''
         Updates the learning parameters
-        Disclaimer: We used https://github.com/pytorch/pytorch/blob/cd9b27231b51633e76e28b6a34002ab83b0660fc/torch/optim/sgd.py#L63
-        as reference for writing our version
     '''
-    def __init__(self, sqn_block,  lr=1e-3, use_momentum=False, damping=0.):
+    def __init__(self, sqn_block, lr=1e-3, use_momentum=False, momentum=0.):
         
         self.lr = lr
         # momentum params
-        self.damping = damping; self.use_momentum = use_momentum
+        self.momentum = momentum; self.use_momentum = use_momentum
         self.sqn_block = sqn_block
-        if use_momentum is True:
-            self.set_velocity()
-            if damping < 0 :
-                raise ValueError("Damping can not be < 0 for SGD with momentum")
+        if momentum < 0 :
+            raise ValueError("momentum can not be < 0 for SGD")
+
         self.set_velocity()
 	
-    def set_momentum(self, damping):
-	    self.damping = damping
+    def set_momentum(self, momentum):
+        assert ((momentum>1) and (momentum<0)), "momentum should be between 0 and 1"
+	    self.momentum = momentum
 	    self.set_velocity()
 
     def set_velocity(self):
@@ -48,23 +46,15 @@ class SGD(object):
     def step(self):
         '''
             Take one gradient step 
-            To Do: Check if the original tfm are updated
         '''
-
         for i,tfm in enumerate(self.sqn_block.transforms):
-            # set momentum
-            # print("sgd, tfm: ",tfm.name)
-            self.velocity_weight[i] = self.damping*self.velocity_weight[i] + tfm.grad_weight # weight
+            self.velocity_weight[i] = self.momentum*self.velocity_weight[i] + tfm.grad_weight # weight
             # update weight and bias:
             self.sqn_block.transforms[i].weight -= self.lr*self.velocity_weight[i] # weight update
             if tfm.use_bias:
-                self.velocity_bias[i] = self.damping*self.velocity_bias[i] + tfm.grad_bias  # bias
+                self.velocity_bias[i] = self.momentum*self.velocity_bias[i] + tfm.grad_bias  # bias
                 self.sqn_block.transforms[i].bias -= self.lr*self.velocity_bias[i] # bias update
-            # print(self.sqn_block.transforms[i].weight.norm())
-            # # zero the grad:
-            # tfm.params.grad_weight.fill_(0.) #weight
-            # tfm.params.grad_bias.fill_(0.) # bias
-
+    
 ############################################################################
 
 class MSE(object):
@@ -109,7 +99,6 @@ class Sequential(object):
             Collect the gradient by backpropogation 
         '''
         for tfm in self.transforms[::-1]:
-            # print("Sequential backward:",tfm.name)
             grad_out = tfm.backward(grad_out) 
 
         return grad_out # gradient w.r.t input

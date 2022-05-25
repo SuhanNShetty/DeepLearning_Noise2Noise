@@ -59,7 +59,7 @@ class Model():
             for i in range(len(input)):
                 output = self.model.forward(input[i])
                 loss_batch = self.mse.forward(output, target[i])
-                self.loss_train[e] += loss_batch
+                self.loss_train[e] += loss_batch.item()
                 self.optimizer.zero_grad()
                 self.model.backward(self.mse.backward()) # update the gradients
                 self.optimizer.step()  
