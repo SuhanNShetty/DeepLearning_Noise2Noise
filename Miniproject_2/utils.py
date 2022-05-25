@@ -22,9 +22,9 @@ class SGD(object):
         self.set_velocity()
 	
     def set_momentum(self, momentum):
-        assert ((momentum>1) and (momentum<0)), "momentum should be between 0 and 1"
-	    self.momentum = momentum
-	    self.set_velocity()
+        assert ((momentum<1) and (momentum>0)), "momentum should be between 0 and 1"
+        self.momentum = momentum
+        self.set_velocity()
 
     def set_velocity(self):
         '''
@@ -38,10 +38,9 @@ class SGD(object):
                 self.velocity_bias.append(0.*tfm.grad_bias)
             else:
                 self.velocity_bias.append(None)
-
+                
     def zero_grad(self):
         self.sqn_block.zero_grad()
-
 
     def step(self):
         '''
@@ -54,9 +53,8 @@ class SGD(object):
             if tfm.use_bias:
                 self.velocity_bias[i] = self.momentum*self.velocity_bias[i] + tfm.grad_bias  # bias
                 self.sqn_block.transforms[i].bias -= self.lr*self.velocity_bias[i] # bias update
-    
+            
 ############################################################################
-
 class MSE(object):
     def __init__(self):
         pass 
@@ -157,7 +155,7 @@ class Sigmoid(object) :
 ############################################################################
 
 class Conv2d(object):
-    def __init__(self, in_ch, out_ch, kernel_size = (3,3), padding = 0, stride = 1, use_bias = False, device='cpu'):
+    def _init_(self, in_ch, out_ch, kernel_size = (3,3), padding = 0, stride = 1, use_bias = False, device = 'cpu'):
         self.name = "Conv2d"
         self.device =device
         self.in_ch = in_ch
@@ -167,27 +165,22 @@ class Conv2d(object):
         self.use_bias = use_bias
         self.stride = stride
         self.padding = padding
-        self.kernel = empty(out_ch, in_ch, self.k, self.k).normal_().to(self.device)
-        self.bias = (empty(out_ch).normal_() if use_bias else torch.zeros(out_ch)).to(self.device)
+        self.kernel = torch.empty(out_ch, in_ch, self.k, self.k).normal_(0,1/(self.k**2*self.in_ch)).to(self.device)
+        self.bias = torch.empty(out_ch).normal_(0,1) if use_bias else torch.zeros(out_ch).to(self.device)
 
+        
         self.weight = self.kernel
         self.grad_weight = 0*self.weight
         self.grad_bias = 0*self.bias
-
     def zero_grad(self):
         self.grad_weight.fill_(0.)
         if self.use_bias:
             self.grad_bias.fill_(0)
-
-
-    def forward(self, x): 
-        # Update the kernel and bias
-        self.kernel = self.weight  
-        self.bias = self.bias
-
+    def forward(self, x):   
+        
         self.batch_size = x.size(0)
         self.s_in = x.size(-1)
-        self.s_out = int(ceil((x.size(-2)-self.k+1+self.padding*2)/(self.stride)))
+        self.s_out = torch.tensor(x.size(-2)-self.k+1+self.padding*2).div(self.stride).ceil().int()
         
         X_unf = unfold(x, kernel_size=(self.k, self.k), padding = self.padding, stride = self.stride)
         
@@ -196,9 +189,10 @@ class Conv2d(object):
     
         K_expand = self.kernel.view(self.out_ch, -1)
         O_expand = K_expand @ X_unf
-        
+
         O = O_expand.view(self.batch_size, self.out_ch, self.s_out, self.s_out)
-        return O + self.bias.view(1, -1, 1, 1) if self.use_bias else O
+        self.output = O + self.bias.view(1, -1, 1, 1) if self.use_bias else O
+        return self.output 
     
     def backward(self, gradwrtoutput):
         dL_dO = gradwrtoutput                                       # (B x OUT_CH x SO x SO)
@@ -219,26 +213,26 @@ class Conv2d(object):
         
         # backward wrt bias
         if self.use_bias:
-            dO_dB_exp = 1+0*empty(self.batch_size * (self.s_out) * (self.s_out)).to(self.device)
+            dO_dB_exp = torch.ones(self.batch_size * (self.s_out) * (self.s_out))
             self.dL_dB = dL_dO_exp @ dO_dB_exp
         else:
             self.dL_dB = None
-
-        # save the params
+            
         self.grad_in = dL_dX
         self.grad_weight = self.dL_dF
         self.grad_bias = self.dL_dB
         
-        return dL_dX
+        return self.grad_in
+
         
     def param(self) :
-        return ((self.weight,self.grad_weight),(self.bias, self.grad_bias))
+        return ((self.weight, self.grad_weight), (self.bias, self.grad_bias))
 
 
 ############################################################################
 
 class ConvTranspose2d(object):
-    def __init__(self, in_ch, out_ch, kernel_size = (3,3), padding = 0, stride = 1, use_bias = False, device='cpu'):
+    def _init_(self, in_ch, out_ch, kernel_size = (3,3), padding = 0, stride = 1, use_bias = False, device='cpu', output_padding = 0):
         self.name = "ConvTranspose2d"
         self.device = device
         self.in_ch = in_ch
@@ -250,29 +244,25 @@ class ConvTranspose2d(object):
         self.stride = stride
         self.padding = padding
         self.kernel = empty(in_ch, out_ch, self.k_1, self.k_2).normal_().to(self.device)
-        self.bias = (empty(out_ch).normal_() if use_bias else 0*empty(out_ch)).to(self.device)
-
+        self.bias = empty(out_ch).normal_() if use_bias else 0*empty(out_ch).to(self.device)
+        self.output_padding = output_padding
+        
         self.weight = self.kernel
         self.grad_weight = 0*self.weight
-        self.grad_bias = 0*self.bias
-
+        self.grad_bias = 0*self.bias     
+        
     def zero_grad(self):
         self.grad_weight.fill_(0.)
         if self.use_bias:
             self.grad_bias.fill_(0)
 
-
     def forward(self, x):
-        # Update the kernel and bias
-        self.kernel = self.weight  
-        self.bias = self.bias
-
         self.x = x
         self.batch_size = x.size(0)
         self.s1 = self.x.size(-2)
         self.s2 = self.x.size(-1)
-        o1 = (self.s1 - 1)*self.stride + 1 + self.k_1 - 1 - self.padding *2
-        o2 = (self.s2 - 1)*self.stride + 1 + self.k_2 - 1 - self.padding *2
+        o1 = (self.s1 - 1)*self.stride + 1 + self.k_1 - 1 - self.padding *2 + self.output_padding
+        o2 = (self.s2 - 1)*self.stride + 1 + self.k_2 - 1 - self.padding *2 + self.output_padding
         
         self.o1 = o1
         self.o2 = o2
@@ -292,7 +282,7 @@ class ConvTranspose2d(object):
                                    # B x (OUT_CH x K x K) x SI x SI
         dO_dX_exp = dO_dX.view(self.in_ch, -1)
         dL_dX_exp = dO_dX_exp @ dL_dO_unf
-        self.dL_dX = dL_dX_exp.view(self.batch_size, self.in_ch, self.s1, self.s2)
+        dL_dX = dL_dX_exp.view(self.batch_size, self.in_ch, self.s1, self.s2)
         
         self.dL_dO_unf_K = dL_dO_unf.transpose(0,1).reshape(self.out_ch * self.k_1 * self.k_2, -1).transpose(0,1)
                                                                     # (B x SI x SI) x (OUT_CH x K x K)
@@ -301,16 +291,14 @@ class ConvTranspose2d(object):
         self.dL_dF = self.dL_dF_exp.view(self.in_ch, self.out_ch, self.k_1, self.k_2)  # OUT_CH x IN_CH x K x K
         
         dL_dO_exp = dL_dO.transpose(0,1).reshape(self.out_ch, -1)
-        dO_dB_exp = 1+0*empty(self.batch_size * (self.o1) * (self.o2)).to(self.device)
+        dO_dB_exp = 1+0*empty(self.batch_size * (self.o1) * (self.o2))
         self.dL_dB = dL_dO_exp @ dO_dB_exp
-
-        # save the params
-        self.grad_in = self.dL_dX
+        
+        self.grad_in = dL_dX
         self.grad_weight = self.dL_dF
         self.grad_bias = self.dL_dB
+        return self.grad_in
         
-        return self.dL_dX
-
     def param(self) :
-        return ((self.weight,self.grad_weight),(self.bias, self.grad_bias))
+        return ((self.kernel, self.grad_weight), (self.bias, self.grad_bias))
 

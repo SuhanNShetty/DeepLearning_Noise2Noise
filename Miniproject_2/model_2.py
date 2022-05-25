@@ -3,18 +3,18 @@ from tqdm import tqdm
 from utils import *
         
 class Model():
-    def __init__(self, device):
-        self.device = device
+    def __init__(self):
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.batch_size = 50
         self.in_ch = 3
         self.m = 32
         self.k = 3
         
         # Instantiate elements of the model
-        self.conv1 = Conv2d(self.in_ch,self.m, kernel_size = (self.k,self.k), stride=1, padding=0, device=device)
-        self.conv2 = Conv2d(self.m, 2*self.m, kernel_size = (self.k,self.k), stride=1, padding=0,device=device)
-        self.tconv1 = ConvTranspose2d(2*self.m, self.m, kernel_size = (self.k,self.k), stride=1, padding=0,device=device)
-        self.tconv2 = ConvTranspose2d(self.m, self.in_ch, kernel_size = (self.k,self.k), stride=1, padding=0,device=device)        
+        self.conv1 = Conv2d(self.in_ch,self.m, kernel_size = (self.k,self.k), stride=1, padding=0, device=self.device)
+        self.conv2 = Conv2d(self.m, 2*self.m, kernel_size = (self.k,self.k), stride=1, padding=0,device=self.device)
+        self.tconv1 = ConvTranspose2d(2*self.m, self.m, kernel_size = (self.k,self.k), stride=1, padding=0,device=self.device)
+        self.tconv2 = ConvTranspose2d(self.m, self.in_ch, kernel_size = (self.k,self.k), stride=1, padding=0,device=self.device)        
         
         # Setup the model
         self.model = Sequential(self.conv1,ReLU(),
@@ -22,7 +22,7 @@ class Model():
                             self.tconv1,ReLU(),
                             self.tconv2,Sigmoid())
         # Optimizer
-        self.optimizer = SGD(self.model,lr=1e-3, use_momentum=False, damping=0.) 
+        self.optimizer = SGD(self.model,lr=1e-3, use_momentum=False, momentum=0.) 
 
         # Loss function
         self.mse = MSE()
