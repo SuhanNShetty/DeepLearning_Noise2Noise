@@ -24,10 +24,9 @@ class SGD(object):
                 raise ValueError("Damping can not be < 0 for SGD with momentum")
         self.set_velocity()
 	
-	def set_momentum(self, damping):
-		self.damping = damping
-		self.set_velocity()
-
+    def set_momentum(self, damping):
+	    self.damping = damping
+	    self.set_velocity()
 
     def set_velocity(self):
         '''
@@ -37,7 +36,10 @@ class SGD(object):
         self.velocity_bias = []
         for tfm in self.sqn_block.transforms:
             self.velocity_weight.append(0.*tfm.grad_weight)
-            self.velocity_bias.append(0.*tfm.grad_bias)
+            if tfm.use_bias:
+                self.velocity_bias.append(0.*tfm.grad_bias)
+            else:
+                self.velocity_bias.append(None)
 
     def zero_grad(self):
         self.sqn_block.zero_grad()

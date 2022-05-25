@@ -35,7 +35,7 @@ class Model():
         self.model.to(self.device)
         
         # Optimizer
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr = 1e-2)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr = 1e-2) #momentum=0.9
         
         # Loss function
         self.mse = nn.MSELoss()
@@ -62,8 +62,8 @@ class Model():
         target = train_target[0:split]
         valid_target = train_target[split:-1]
         
-        self.loss_train = torch.zeros(num_epochs, device = self.device)
-        self.loss_valid = torch.zeros(num_epochs, device = self.device)
+        self.loss_train = torch.zeros(num_epochs, device = self.device,requires_grad=False)
+        self.loss_valid = torch.zeros(num_epochs, device = self.device,requires_grad=False)
         
         for e in tqdm(range(num_epochs)):
             

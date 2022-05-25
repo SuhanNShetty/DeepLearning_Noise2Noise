@@ -3,7 +3,7 @@ Test of the different modules
 """
 
 import torch
-from model import Conv
+from Miniproject_2.model_ import Conv
 if __name__ == '__main__':
     kernel_size=(2, 2)
     
