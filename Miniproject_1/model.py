@@ -1,6 +1,7 @@
 import torch 
 from torch import nn
 from tqdm import tqdm 
+from torch.profiler import profile, record_function, ProfilerActivity
 
 class Net(nn.Module):
     def __init__(self,in_ch, m, k):
@@ -47,14 +48,14 @@ class Model():
         torch.load(self.model,'bestmodel.pth')
     
     def train(self, train_input, train_target, num_epochs):
-        train_input  = train_input.float()/256
-        train_target = train_target.float()/256
+        train_input  = (train_input.float()/256).to(self.device)
+        train_target = (train_target.float()/256).to(self.device)
         
-        train_input  = train_input.to(self.device).type(torch.float).split(self.batch_size)
-        train_target = train_target.to(self.device).type(torch.float).split(self.batch_size)
+        train_input  = train_input.type(torch.float).split(self.batch_size)
+        train_target = train_target.type(torch.float).split(self.batch_size)
         
         # split the training set in a training and validation set 
-        split = torch.floor(torch.tensor(len(train_input)/10*9)).int().item()
+        split = torch.floor(torch.tensor(len(train_input)*0.9)).int().item()
         
         input = train_input[0:split]
         valid_input = train_input[split:-1]
@@ -66,24 +67,23 @@ class Model():
         self.loss_valid = torch.zeros(num_epochs, device = self.device,requires_grad=False)
         
         for e in tqdm(range(num_epochs)):
-            
             self.model.train()
             for i in range(len(input)):
                 output = self.model(input[i])
                 loss_batch = self.mse(output, target[i])
-                self.loss_train[e] += loss_batch
+                self.loss_train[e] += loss_batch.item()
                 self.optimizer.zero_grad()
                 loss_batch.backward()
                 self.optimizer.step()
-                
+            
             self.model.eval()
-            for j in range(len(valid_input)):
+            for j in range(len(valid_input)): 
                 output = self.model(valid_input[j])
                 loss_batch = self.mse(output, target[i])
-                self.loss_valid[e] += loss_batch
-                                    
-            self.scheduler.step(self.loss_valid[e])
-                                    
+                self.loss_valid[e] += loss_batch.item()
+#             self.scheduler.step(self.loss_valid[e])
+
+                                        
 
     def predict(self, test_input):
         self.model.eval()
