@@ -65,8 +65,8 @@ class Model():
                 self.optimizer.step()  
             for j in range(len(valid_input)):
                 output = self.model.forward(valid_input[j])
-                loss_batch = self.mse.forward(output, target[i])
-                self.loss_valid[e] += loss_batch
+                loss_batch = self.mse.forward(output, target[i]).item()
+                self.loss_valid[e] += loss_batch.item()
                                                                         
 
     def predict(self, test_input):
