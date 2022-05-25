@@ -5,10 +5,10 @@ from tqdm import tqdm
 class Net(nn.Module):
     def __init__(self,in_ch, m, k):
         super().__init__() 
-        self.conv1 = nn.Conv2d(in_ch,m, kernel_size = k, stride=1, padding=0)
-        self.conv2 = nn.Conv2d(m, m*2, kernel_size = k, stride=1, padding=0)
-        self.tconv1 = nn.ConvTranspose2d(m*2, m, kernel_size = k, stride=1, padding=0)
-        self.tconv2 = nn.ConvTranspose2d(m, in_ch, kernel_size = k, stride=1, padding=0)
+        self.conv1 = nn.Conv2d(in_ch,m, kernel_size = k, stride=2, padding=1)
+        self.conv2 = nn.Conv2d(m, m*2, kernel_size = k, stride=2, padding=1)
+        self.tconv1 = nn.ConvTranspose2d(m*2, m, kernel_size = k, stride=2, padding=1, output_padding=1)
+        self.tconv2 = nn.ConvTranspose2d(m, in_ch, kernel_size = k, stride=2, padding=1, output_padding=1)
         
         self.relu = nn.ReLU()
         self.relu = nn.ReLU()
@@ -25,7 +25,7 @@ class Net(nn.Module):
 class Model():
     def __init__(self, device='cpu'):
         self.device=device
-        self.batch_size = 50
+        self.batch_size = 100
         self.in_ch = 3
         self.m = 32
         self.k = 3
@@ -35,13 +35,13 @@ class Model():
         self.model.to(self.device)
         
         # Optimizer
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr = 1e-2) #momentum=0.9
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr = 1e-2)
         
         # Loss function
         self.mse = nn.MSELoss()
         
-        # Scheduler
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor = 0.5, threshold  = 1e-10)
+        # # Scheduler
+        # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor = 0.5, threshold  = 1e-10)
         
     def load_pretrained_model(self):
         torch.load(self.model,'bestmodel.pth')
