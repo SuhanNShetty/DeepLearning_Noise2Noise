@@ -2,19 +2,18 @@ import torch
 from torch import nn
 from torch.nn import Conv2d, ConvTranspose2d, ReLU, Sigmoid
 from tqdm import tqdm 
-from torch.profiler import profile, record_function, ProfilerActivity
 
 class Net(nn.Module):
     def __init__(self,in_ch, m, k):
         super().__init__()
 
-#         self.Block = nn.Sequential(Conv2d(in_ch,m, kernel_size=k, stride=2, padding=1), ReLU(),
-#                                    ConvTranspose2d(m, in_ch, kernel_size=k, stride=2, padding=1, output_padding=1), Sigmoid())
-
         self.Block = nn.Sequential(Conv2d(in_ch,m, kernel_size=k, stride=2, padding=1), ReLU(),
-                                   Conv2d(m,m, kernel_size=k, stride=2, padding=1), ReLU(),
-                                   ConvTranspose2d(m, m, kernel_size=k, stride=2, padding=1, output_padding=1), ReLU(),
                                    ConvTranspose2d(m, in_ch, kernel_size=k, stride=2, padding=1, output_padding=1), Sigmoid())
+
+        # self.Block = nn.Sequential(Conv2d(in_ch,m, kernel_size=k, stride=2, padding=1), ReLU(),
+        #                            Conv2d(m,m, kernel_size=k, stride=2, padding=1), ReLU(),
+        #                            ConvTranspose2d(m, m, kernel_size=k, stride=2, padding=1, output_padding=1), ReLU(),
+        #                            ConvTranspose2d(m, in_ch, kernel_size=k, stride=2, padding=1, output_padding=1), Sigmoid())
 
 
 #         self.Block = nn.Sequential(Conv2d(in_ch,m, kernel_size=k, stride=2, padding=1), ReLU(),
@@ -34,7 +33,7 @@ class Model():
         self.device=device
         self.batch_size = 1000
         self.in_ch = 3
-        self.m = 20
+        self.m = 200
         self.k = 3
         
         # Instantiate model
