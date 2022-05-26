@@ -1,35 +1,39 @@
 import torch 
 from torch import nn
-from torch.nn import Conv2d, ConvTranspose2d
+from torch.nn import Conv2d, ConvTranspose2d, ReLU, Sigmoid
 from tqdm import tqdm 
-from torch.profiler import profile, record_function, ProfilerActivity
 
 class Net(nn.Module):
     def __init__(self,in_ch, m, k):
-        super().__init__() 
-        self.conv1 = Conv2d(in_ch,m, kernel_size = k, stride=2, padding=1)
-        self.conv2 = Conv2d(m, m*2, kernel_size = k, stride=2, padding=1)
-        self.tconv1 = ConvTranspose2d(m*2, m, kernel_size = k, stride=2, padding=1, output_padding=1)
-        self.tconv2 = ConvTranspose2d(m, in_ch, kernel_size = k, stride=2, padding=1, output_padding=1)
-        
-        self.relu = nn.ReLU()
-        self.relu = nn.ReLU()
-        self.relu = nn.ReLU()
-        self.sigmoid = nn.Sigmoid()
+        super().__init__()
+
+        self.Block = nn.Sequential(Conv2d(in_ch,m, kernel_size=k, stride=2, padding=1), ReLU(),
+                                   ConvTranspose2d(m, in_ch, kernel_size=k, stride=2, padding=1, output_padding=1), Sigmoid())
+
+        # self.Block = nn.Sequential(Conv2d(in_ch,m, kernel_size=k, stride=2, padding=1), ReLU(),
+        #                            Conv2d(m,m, kernel_size=k, stride=2, padding=1), ReLU(),
+        #                            ConvTranspose2d(m, m, kernel_size=k, stride=2, padding=1, output_padding=1), ReLU(),
+        #                            ConvTranspose2d(m, in_ch, kernel_size=k, stride=2, padding=1, output_padding=1), Sigmoid())
+
+
+#         self.Block = nn.Sequential(Conv2d(in_ch,m, kernel_size=k, stride=2, padding=1), ReLU(),
+#                                    Conv2d(m,m, kernel_size=k, stride=2, padding=1), ReLU(),
+#                                    Conv2d(m,m, kernel_size=k, stride=2, padding=1), ReLU(),
+#                                    Conv2d(m,m, kernel_size=k, stride=2, padding=1), ReLU(),
+#                                    ConvTranspose2d(m, m, kernel_size=k, stride=2, padding=1, output_padding=1), ReLU(),
+#                                    ConvTranspose2d(m, m, kernel_size=k, stride=2, padding=1, output_padding=1), ReLU(),
+#                                    ConvTranspose2d(m, m, kernel_size=k, stride=2, padding=1, output_padding=1),ReLU(),
+#                                    ConvTranspose2d(m, in_ch, kernel_size=k, stride=2, padding=1, output_padding=1), Sigmoid())
         
     def forward(self, x):
-        x = self.relu(self.conv1(x))
-        x = self.relu(self.conv2(x))
-        x = self.relu(self.tconv1(x))
-        x = self.sigmoid(self.tconv2(x))
-        return x
+        return self.Block(x)
         
 class Model():
     def __init__(self, device='cpu'):
         self.device=device
-        self.batch_size = 100
+        self.batch_size = 1000
         self.in_ch = 3
-        self.m = 32
+        self.m = 200
         self.k = 3
         
         # Instantiate model
@@ -37,13 +41,13 @@ class Model():
         self.model.to(self.device)
         
         # Optimizer
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr = 1e-2)
+        self.optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2) #SGD(self.model.parameters(), lr = 1, momentum=0.9)#
         
         # Loss function
         self.mse = nn.MSELoss()
         
         # # Scheduler
-        # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor = 0.5, threshold  = 1e-10)
+#         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor = 0.5, threshold  = 1e-10)
         
     def load_pretrained_model(self):
         torch.load(self.model,'bestmodel.pth')
