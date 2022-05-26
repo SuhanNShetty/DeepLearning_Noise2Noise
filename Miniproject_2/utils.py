@@ -1,27 +1,63 @@
 # Acceptable imports for project
 from torch import empty , cat , arange
+from torch.nn.functional import fold , unfold
 from math import ceil
 import math
-from torch.nn.functional import fold , unfold
+
+############################################################################
+class Sequential(object):
+    '''
+        A sequence of layers
+    '''
+    def __init__(self, *args):
+        self.transforms = args
+
+    def zero_grad(self):
+        '''
+            Set gradients to zero
+        '''
+        for tfm in self.transforms:
+            tfm.zero_grad()
+            # print('grad_weight',tfm.grad_weight)
+            # print('weight',tfm.weight)
+
+    def forward(self, x):
+        for tfm in self.transforms:
+            x = tfm.forward(x)
+            # print('In forward', tfm.name)
+        return x
+
+    def backward(self, grad_out):
+        '''
+            grad_out: gradient w.r.t output 
+            Collect the gradient by backpropogation 
+        '''
+        for tfm in self.transforms[::-1]:
+            grad_out = tfm.backward(grad_out)
+            # print('In backward', tfm.name) 
+
+        return grad_out # gradient w.r.t input
+    
 
 ############################################################################
 class SGD(object):
     '''
         Updates the learning parameters
     '''
-    def __init__(self, sqn_block, lr=1e-3, use_momentum=False, momentum=0.):
+    def __init__(self, sqn_block, lr=1e-1, use_momentum=False, momentum=0.):
         
         self.lr = lr
-        # momentum params
-        self.momentum = momentum; self.use_momentum = use_momentum
         self.sqn_block = sqn_block
-        if momentum < 0 :
-            raise ValueError("momentum can not be < 0 for SGD")
-
+        # momentum params
+        self.use_momentum = use_momentum
+        self.momentum = momentum;
+        if use_momentum and momentum < 0 :
+            assert ((momentum<1) and (momentum>0)), "momentum should be between 0 and 1"
         self.set_velocity()
-	
+    
     def set_momentum(self, momentum):
         assert ((momentum<1) and (momentum>0)), "momentum should be between 0 and 1"
+        self.use_momentum = True
         self.momentum = momentum
         self.set_velocity()
 
@@ -46,12 +82,12 @@ class SGD(object):
             Take one gradient step 
         '''
         for i,tfm in enumerate(self.sqn_block.transforms):
-            self.velocity_weight[i] = self.momentum*self.velocity_weight[i] + tfm.grad_weight # weight
+            self.velocity_weight[i] = self.momentum*self.velocity_weight[i] + self.lr*tfm.grad_weight # weight
             # update weight and bias:
-            self.sqn_block.transforms[i].weight -= self.lr*self.velocity_weight[i] # weight update
+            self.sqn_block.transforms[i].weight = self.sqn_block.transforms[i].weight - self.velocity_weight[i] # weight update
             if tfm.use_bias:
-                self.velocity_bias[i] = self.momentum*self.velocity_bias[i] + tfm.grad_bias  # bias
-                self.sqn_block.transforms[i].bias -= self.lr*self.velocity_bias[i] # bias update
+                self.velocity_bias[i] = self.momentum*self.velocity_bias[i] + self.lr*tfm.grad_bias  # bias
+                self.sqn_block.transforms[i].bias = self.sqn_block.transforms[i].bias - self.velocity_bias[i] # bias update
             
 ############################################################################
 class MSE(object):
@@ -66,39 +102,6 @@ class MSE(object):
     def backward(self):
         self.grad_in = 2*(self.input-self.target)/(self.input.size(-3)*self.input.size(-2)*self.input.size(-1))
         return self.grad_in
-
-############################################################################
-
-class Sequential(object):
-    '''
-        A sequence of layers
-    '''
-    def __init__(self, *args):
-        self.transforms = args
-        # To do: consider skip connection
-
-    def zero_grad(self):
-        '''
-            Set gradients to zero
-        '''
-        for tfm in self.transforms:
-            tfm.zero_grad()
-
-
-    def forward(self, x):
-        for tfm in self.transforms:
-            x = tfm.forward(x)
-        return x
-
-    def backward(self, grad_out):
-        '''
-            grad_out: gradient w.r.t output 
-            Collect the gradient by backpropogation 
-        '''
-        for tfm in self.transforms[::-1]:
-            grad_out = tfm.backward(grad_out) 
-
-        return grad_out # gradient w.r.t input
 
 ############################################################################
 
@@ -165,7 +168,7 @@ class Conv2d(object):
         self.stride = stride
         self.padding = padding
         self.kernel = empty(out_ch, in_ch, self.k, self.k).normal_(0,1/(self.k**2*self.in_ch)).to(self.device)
-        self.bias = empty(out_ch).normal_(0,1) if use_bias else 0*empty(out_ch).to(self.device)
+        self.bias = empty(out_ch).normal_(0,1).to(self.device) if use_bias else 0*empty(out_ch).normal_(0,1).to(self.device)
 
         
         self.weight = self.kernel
@@ -243,7 +246,7 @@ class ConvTranspose2d(object):
         self.stride = stride
         self.padding = padding
         self.kernel = empty(in_ch, out_ch, self.k_1, self.k_2).normal_().to(self.device)
-        self.bias = empty(out_ch).normal_() if use_bias else 0*empty(out_ch).to(self.device)
+        self.bias = empty(out_ch).normal_().to(self.device) if use_bias else 0*empty(out_ch).normal_(0,1).to(self.device)
         self.output_padding = output_padding
         
         self.weight = self.kernel
