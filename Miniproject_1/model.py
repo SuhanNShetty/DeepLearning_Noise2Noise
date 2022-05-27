@@ -124,8 +124,9 @@ class Net(nn.Module):
 
         
 class Model():
-    def __init__(self, bs=10, m=10, net=0, lr=1e-2, device='cpu'):
-        self.device=device
+    def __init__(self, net=6,m=50,lr=0.005,bs=500, device=None):
+        if device==None:
+            self.device= 'cuda' if torch.cuda.is_available() else 'cpu'
         
         self.batch_size = bs
         self.in_ch = 3
@@ -156,7 +157,7 @@ class Model():
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor = 0.5, threshold  = 1e-10)
         
     def load_pretrained_model(self):
-        torch.load(self.model,'bestmodel.pth')
+        self.model.load_state_dict(torch.load('bestmodel.pth'))
     
     def train(self, train_input, train_target, num_epochs):
         train_input  = (train_input.float()/256).to(self.device)

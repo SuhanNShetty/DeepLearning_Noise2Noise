@@ -1,5 +1,5 @@
 import torch
-from .model import Model
+from model import Model
 
 def compute_psnr(denoised, ground_truth):
     mse = torch.mean((denoised-ground_truth)**2)
