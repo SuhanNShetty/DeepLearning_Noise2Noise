@@ -125,7 +125,7 @@ class Net(nn.Module):
 
         
 class Model():
-    def __init__(self, bs=10, m=10, net=0,  device='cpu'):
+    def __init__(self, bs=10, m=10, net=0, lr=1e-2, device='cpu'):
         self.device=device
         
         self.batch_size = bs
@@ -148,7 +148,7 @@ class Model():
         self.model.to(self.device)
         
         # Optimizer
-        self.optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2) #SGD(self.model.parameters(), lr = 1, momentum=0.9)#
+        self.optimizer = torch.optim.Adam(self.model.parameters(),lr=lr) #SGD(self.model.parameters(), lr = 1, momentum=0.9)#
         
         # Loss function
         self.mse = nn.MSELoss()
@@ -178,7 +178,7 @@ class Model():
         self.loss_train = torch.zeros(num_epochs, device = self.device,requires_grad=False)
         self.loss_valid = torch.zeros(num_epochs, device = self.device,requires_grad=False)
         
-        for e in tqdm(range(num_epochs)):
+        for e in range(num_epochs):
             self.model.train()
             for i in range(len(input)):
                 output = self.model(input[i])
