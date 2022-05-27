@@ -126,6 +126,7 @@ class Tests(unittest.TestCase):
     def _test_train_model(self, project_number):
         Model = importlib.import_module(f"Miniproject_{project_number}.model").Model
         model = Model()
+        print('project_number : ',project_number)
         model.load_pretrained_model()
 
         train_path = data_path / "train_data.pkl"

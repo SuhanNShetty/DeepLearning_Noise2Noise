@@ -1,3 +1,0 @@
-2022-05-27 16:14:16,429 INFO gridtk: Starting job 11: /idiap/temp/sshetty/miniconda/envs/pyml/bin/python model_finder.py --net 6
-Matplotlib created a temporary config/cache directory at /tmp/506603.1.q_short_gpu/matplotlib-3f5vj64_ because the default path (/idiap/home/sshetty/.cache/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
-2022-05-27 18:15:07,276 INFO gridtk: Job 11 finished with result 0

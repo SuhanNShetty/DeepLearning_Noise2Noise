@@ -4,9 +4,6 @@ from torch.nn.functional import fold , unfold
 import math
 from pathlib import Path
 from tqdm import tqdm
-
-# Import homemade modules
-# from .others.modules import *
         
 class Model():
     def __init__(self, device = 'cpu'):
@@ -343,7 +340,7 @@ class Conv2d(object):
         
         # Preparation of the elements to compute the backward pass for the bias
         if self.use_bias:
-            self.grad_bias = dL_dO_exp @ (1+0*empty(self.batch_size * (self.s_out) * (self.s_out)).normal_()).to(self.device)
+            self.grad_bias = dL_dO_exp @ (empty(self.batch_size * (self.s_out) * (self.s_out)).fill_(1)).to(self.device)
         else:
             self.grad_bias = None
         
@@ -415,7 +412,7 @@ class TransposeConv2d(object):
         
         # Preparation of the elements to compute the backward pass for the bias
         if self.use_bias:
-            dO_dB_exp = (1.0+0*empty(self.batch_size * (self.o1) * (self.o2)).normal_()).to(self.device)
+            dO_dB_exp = (empty(self.batch_size * (self.o1) * (self.o2)).fill_(1)).to(self.device)
             self.grad_bias = gradwrtoutput.transpose(0,1).reshape(self.out_ch, -1) @ dO_dB_exp
         else:
             self.grad_bias = None
