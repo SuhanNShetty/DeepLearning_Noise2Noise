@@ -21,7 +21,6 @@ class Net8(nn.Module):
         self.tconv3 = ConvTranspose2d(m*2, m, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
         self.tconv4 = ConvTranspose2d(m*2, m, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
         self.tconv5 = ConvTranspose2d(m*2, in_ch, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
-        
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
         
@@ -178,7 +177,7 @@ class Model():
         self.loss_train = torch.zeros(num_epochs, device = self.device,requires_grad=False)
         self.loss_valid = torch.zeros(num_epochs, device = self.device,requires_grad=False)
         
-        for e in range(num_epochs):
+        for e in tqdm(range(num_epochs)):
             self.model.train()
             for i in range(len(input)):
                 output = self.model(input[i])

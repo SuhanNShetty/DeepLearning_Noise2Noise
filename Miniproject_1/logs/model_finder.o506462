@@ -1,0 +1,44 @@
+cuda
+Model Training for m:10, bs:10, epochs:4
+m:10, bs:10, psnr:24.674400329589844
+Model Training for m:10, bs:50, epochs:12
+m:10, bs:50, psnr:24.917936325073242
+Model Training for m:10, bs:100, epochs:22
+m:10, bs:100, psnr:24.903186798095703
+Model Training for m:10, bs:250, epochs:52
+m:10, bs:250, psnr:24.938295364379883
+Model Training for m:10, bs:500, epochs:102
+m:10, bs:500, psnr:24.91651725769043
+Model Training for m:10, bs:1000, epochs:202
+m:10, bs:1000, psnr:24.49510955810547
+Model Training for m:25, bs:10, epochs:4
+m:25, bs:10, psnr:24.84467315673828
+Model Training for m:25, bs:50, epochs:12
+m:25, bs:50, psnr:25.12960433959961
+Model Training for m:25, bs:100, epochs:22
+m:25, bs:100, psnr:25.176298141479492
+Model Training for m:25, bs:250, epochs:52
+m:25, bs:250, psnr:25.292274475097656
+Model Training for m:25, bs:500, epochs:102
+m:25, bs:500, psnr:25.245859146118164
+Model Training for m:25, bs:1000, epochs:202
+m:25, bs:1000, psnr:25.063180923461914
+Model Training for m:50, bs:10, epochs:4
+m:50, bs:10, psnr:24.88465118408203
+Model Training for m:50, bs:50, epochs:12
+m:50, bs:50, psnr:25.030445098876953
+Model Training for m:50, bs:100, epochs:22
+m:50, bs:100, psnr:25.334632873535156
+Model Training for m:50, bs:250, epochs:52
+m:50, bs:250, psnr:25.21749496459961
+Model Training for m:50, bs:500, epochs:102
+m:50, bs:500, psnr:25.251251220703125
+Model Training for m:50, bs:1000, epochs:202
+m:50, bs:1000, psnr:25.193359375
+Model Training for m:100, bs:10, epochs:4
+m:100, bs:10, psnr:6.455883026123047
+Model Training for m:100, bs:50, epochs:12
+m:100, bs:50, psnr:6.455883026123047
+Model Training for m:100, bs:100, epochs:22
+m:100, bs:100, psnr:6.455883026123047
+Model Training for m:100, bs:250, epochs:52

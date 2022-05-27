@@ -1,0 +1,68 @@
+cuda
+Model Training for m:10, bs:10, epochs:1
+m:10, bs:10, psnr:24.324636459350586
+Model Training for m:10, bs:50, epochs:2
+m:10, bs:50, psnr:24.53931427001953
+Model Training for m:10, bs:100, epochs:3
+m:10, bs:100, psnr:24.591684341430664
+Model Training for m:10, bs:250, epochs:7
+m:10, bs:250, psnr:24.695030212402344
+Model Training for m:10, bs:500, epochs:13
+m:10, bs:500, psnr:24.696855545043945
+Model Training for m:10, bs:1000, epochs:26
+m:10, bs:1000, psnr:24.264232635498047
+Model Training for m:25, bs:10, epochs:1
+m:25, bs:10, psnr:24.56620216369629
+Model Training for m:25, bs:50, epochs:2
+m:25, bs:50, psnr:24.8837833404541
+Model Training for m:25, bs:100, epochs:3
+m:25, bs:100, psnr:24.812715530395508
+Model Training for m:25, bs:250, epochs:7
+m:25, bs:250, psnr:24.937889099121094
+Model Training for m:25, bs:500, epochs:13
+m:25, bs:500, psnr:24.931211471557617
+Model Training for m:25, bs:1000, epochs:26
+m:25, bs:1000, psnr:24.93522834777832
+Model Training for m:50, bs:10, epochs:1
+m:50, bs:10, psnr:24.73750877380371
+Model Training for m:50, bs:50, epochs:2
+m:50, bs:50, psnr:24.951961517333984
+Model Training for m:50, bs:100, epochs:3
+m:50, bs:100, psnr:25.024717330932617
+Model Training for m:50, bs:250, epochs:7
+m:50, bs:250, psnr:24.83055305480957
+Model Training for m:50, bs:500, epochs:13
+m:50, bs:500, psnr:24.880903244018555
+Model Training for m:50, bs:1000, epochs:26
+m:50, bs:1000, psnr:25.058612823486328
+Model Training for m:100, bs:10, epochs:1
+m:100, bs:10, psnr:6.455883026123047
+Model Training for m:100, bs:50, epochs:2
+m:100, bs:50, psnr:6.455883026123047
+Model Training for m:100, bs:100, epochs:3
+m:100, bs:100, psnr:6.455883026123047
+Model Training for m:100, bs:250, epochs:7
+m:100, bs:250, psnr:6.455883026123047
+Model Training for m:100, bs:500, epochs:13
+m:100, bs:500, psnr:6.455883026123047
+Model Training for m:100, bs:1000, epochs:26
+m:100, bs:1000, psnr:6.455883026123047
+psnr:  tensor([[24.3246, 24.5393, 24.5917, 24.6950, 24.6969, 24.2642],
+        [24.5662, 24.8838, 24.8127, 24.9379, 24.9312, 24.9352],
+        [24.7375, 24.9520, 25.0247, 24.8306, 24.8809, 25.0586],
+        [ 6.4559,  6.4559,  6.4559,  6.4559,  6.4559,  6.4559]])
+Choose Learning Rate: 
+Model Training for m:50, bs:1000, epochs:26
+m:50, bs:1000, lr:0.1, psnr:6.455883026123047
+Model Training for m:50, bs:1000, epochs:26
+m:50, bs:1000, lr:0.05, psnr:6.455883026123047
+Model Training for m:50, bs:1000, epochs:26
+m:50, bs:1000, lr:0.01, psnr:25.027639389038086
+Model Training for m:50, bs:1000, epochs:26
+m:50, bs:1000, lr:0.005, psnr:25.192039489746094
+Model Training for m:50, bs:1000, epochs:26
+m:50, bs:1000, lr:0.001, psnr:24.92804718017578
+psnr over lr:  [tensor(6.4559), tensor(6.4559), tensor(25.0276), tensor(25.1920), tensor(24.9280)]
+Best Learning Rate:  0.005
+Train the best model, m:50, bs:1000, lr:0.005, epochs:251
+Best psnr:  tensor(25.2938)

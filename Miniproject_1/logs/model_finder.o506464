@@ -1,0 +1,24 @@
+cuda
+Model Training for m:10, bs:10, epochs:4
+m:10, bs:10, psnr:24.650043487548828
+Model Training for m:10, bs:50, epochs:12
+m:10, bs:50, psnr:24.853408813476562
+Model Training for m:10, bs:100, epochs:22
+m:10, bs:100, psnr:25.05286979675293
+Model Training for m:10, bs:250, epochs:52
+m:10, bs:250, psnr:25.0681209564209
+Model Training for m:10, bs:500, epochs:102
+m:10, bs:500, psnr:25.070880889892578
+Model Training for m:10, bs:1000, epochs:202
+m:10, bs:1000, psnr:24.635488510131836
+Model Training for m:25, bs:10, epochs:4
+m:25, bs:10, psnr:24.648441314697266
+Model Training for m:25, bs:50, epochs:12
+m:25, bs:50, psnr:25.211069107055664
+Model Training for m:25, bs:100, epochs:22
+m:25, bs:100, psnr:25.342693328857422
+Model Training for m:25, bs:250, epochs:52
+m:25, bs:250, psnr:25.19512939453125
+Model Training for m:25, bs:500, epochs:102
+m:25, bs:500, psnr:24.997268676757812
+Model Training for m:25, bs:1000, epochs:202
