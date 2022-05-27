@@ -24,7 +24,7 @@ class Model():
                             self.tconv1,ReLU(),
                             self.tconv2,Sigmoid())
         # Optimizer
-        self.optimizer = SGD(self.model, lr=1, use_momentum=False, momentum=0.5) 
+        self.optimizer = SGD(self.model, lr=1e-2, use_momentum=False, momentum=0.) 
 
         # Loss function
         self.mse = MSE()
