@@ -1,5 +1,6 @@
 from torch.cuda import is_available
 from tqdm import tqdm 
+from torch import save, load
 
 from utils import *
         
@@ -66,3 +67,13 @@ class Model():
         # Retrieve images and prepare them
         noisy_imgs = noisy_imgs.clone().to(self.device).float()/256
         return self.model.forward(noisy_imgs)
+    
+    def save_model(self):
+        path = 'test_model.pth'
+        save(self.model, path)
+        pass
+    
+    def load_model(self):
+        path = 'test_model.pth'
+        self.model = load(path, map_location = self.device)
+        pass
