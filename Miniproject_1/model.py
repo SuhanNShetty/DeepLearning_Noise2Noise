@@ -5,58 +5,7 @@ from tqdm import tqdm
 from torch.profiler import profile, record_function, ProfilerActivity
 
 
-# class Net(nn.Module):
-#     def __init__(self,in_ch, m, k):
-#         super().__init__()
-
-#         self.Block = nn.Sequential(Conv2d(in_ch,m, kernel_size=k, stride=1, padding=1), ReLU(),
-#                                    ConvTranspose2d(m, in_ch, kernel_size=k, stride=1, padding=1, output_padding=1), Sigmoid())
-
-        
-#     def forward(self, x):
-#         return self.Block(x)
-
-
-
-# class Net(nn.Module):
-#     def __init__(self,in_ch, m, k):
-#         super().__init__()
-
-# #         self.Block = nn.Sequential(Conv2d(in_ch,m, kernel_size=k, stride=2, padding=1), ReLU(),
-# #                                    ConvTranspose2d(m, in_ch, kernel_size=k, stride=2, padding=1, output_padding=1), Sigmoid())
-
-# #         self.Block = nn.Sequential(Conv2d(in_ch,m, kernel_size=k, stride=2, padding=1), ReLU(),
-# #                                    Conv2d(m,m, kernel_size=k, stride=2, padding=1), ReLU(),
-# #                                    ConvTranspose2d(m, m, kernel_size=k, stride=2, padding=1, output_padding=1), ReLU(),
-# #                                    ConvTranspose2d(m, in_ch, kernel_size=k, stride=2, padding=1, output_padding=1), Sigmoid())
-
-
-#         self.BlockConv1 = nn.Sequential(Conv2d(in_ch,m, kernel_size=k, stride=1, padding=1), ReLU(),
-#                                    Conv2d(m,m, kernel_size=k, stride=1, padding=1), ReLU())
-    
-#         self.BlockConv2 = nn.Sequential(Conv2d(m,m, kernel_size=k, stride=1, padding=1), ReLU(),
-#                                    Conv2d(m,m, kernel_size=k, stride=1, padding=1), ReLU())
-
-#         self.BlockDConv1 = nn.Sequential(ConvTranspose2d(m, m, kernel_size=k, stride=2, padding=1, output_padding=1),ReLU(),
-#                                     ConvTranspose2d(m, m, kernel_size=k, stride=2, padding=1, output_padding=1), ReLU())
-
-#         self.BlockDConv2 = nn.Sequential(ConvTranspose2d(2*m, m, kernel_size=k, stride=2, padding=1, output_padding=1),ReLU(),
-#                                     ConvTranspose2d(2*m, in_ch, kernel_size=k, stride=2, padding=1, output_padding=1), Sigmoid())
-
-
-#     def forward(self,x):
-#         x1 = self.BlockConv1(x)
-#         x2 = self.BlockConv2(x1)
-#         x3 = self.BlockDConv1(x2)
-#         x4 = self.BlockConv2(torch.cat((x1,x3),dim=1))
-#         return x4
-        
-#     def forward(self, x):
-#         return self.Block(x)
-
-
-
-class Net(nn.Module):
+class Net8(nn.Module):
     def __init__(self,in_ch, m, k):
         super().__init__() 
         stride = 1
@@ -70,7 +19,7 @@ class Net(nn.Module):
         self.tconv1 = ConvTranspose2d(m, m, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
         self.tconv2 = ConvTranspose2d(m*2, m, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
         self.tconv3 = ConvTranspose2d(m*2, m, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
-        self.tconv4 = ConvTranspose2d(m*2, 2*m, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
+        self.tconv4 = ConvTranspose2d(m*2, m, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
         self.tconv5 = ConvTranspose2d(m*2, in_ch, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
         
         self.relu = nn.ReLU()
@@ -86,47 +35,102 @@ class Net(nn.Module):
         x7 = self.relu(self.tconv2(torch.cat((x6,x4),1)))
         x8 = self.relu(self.tconv3(torch.cat((x7,x3),1)))
         x9 = self.relu(self.tconv4(torch.cat((x8,x2),1)))
-        x10 = self.sigmoid(self.tconv5(x9))
+        x10 = self.sigmoid(self.tconv5(torch.cat((x9,x1),1)))
         return x10
 
-
-
-
-
-
-
-# class Net(nn.Module):
-#     def __init__(self,in_ch, m, k):
-#         super().__init__() 
-#         stride = 1
-#         output_padding = 0
-#         self.conv1 = Conv2d(in_ch,m, kernel_size = k, stride=stride, padding=1)
-#         self.conv2 = Conv2d(m, m*2, kernel_size = k, stride=stride, padding=1)
-#         self.conv3 = Conv2d(m*2, m*2, kernel_size = k, stride=stride, padding=1)
-#         self.tconv0 = ConvTranspose2d(m*2, m*2, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
-#         self.tconv1 = ConvTranspose2d(m*4, m, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
-#         self.tconv2 = ConvTranspose2d(m*2, in_ch, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
+class Net6(nn.Module):
+    def __init__(self,in_ch, m, k):
+        super().__init__() 
+        stride = 1
+        output_padding = 0
+        self.conv1 = Conv2d(in_ch,m, kernel_size = k, stride=stride, padding=1)
+        self.conv2 = Conv2d(m, m, kernel_size = k, stride=stride, padding=1)
+        self.conv3 = Conv2d(m, m, kernel_size = k, stride=stride, padding=1)
+        self.tconv1 = ConvTranspose2d(m, m, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
+        self.tconv2 = ConvTranspose2d(2*m, m, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
+        self.tconv3 = ConvTranspose2d(2*m, in_ch, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
         
-#         self.relu = nn.ReLU()
-#         self.sigmoid = nn.Sigmoid()
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
         
-#     def forward(self, x):
-#         x1 = self.relu(self.conv1(x))
-#         x2 = self.relu(self.conv2(x1))
-#         x3 = self.relu(self.conv3(x2))
-#         x3 = self.relu(self.tconv0(x3))
-#         x3 = self.relu(self.tconv1(torch.cat((x3,x2),1)))
-#         x3 = self.sigmoid(self.tconv2(torch.cat((x3,x1),1)))
-#         return x3
+    def forward(self, x):
+        x1 = self.relu(self.conv1(x))
+        x2 = self.relu(self.conv2(x1))
+        x3 = self.relu(self.conv3(x2))
+        x4 = self.relu(self.tconv1(x3))
+        x5 = self.relu(self.tconv2(torch.cat((x4,x2),1)))
+        x6 = self.sigmoid(self.tconv3(torch.cat((x5,x1),1)))
+        return x6
+
+
+
+class Net4(nn.Module):
+    def __init__(self,in_ch, m, k):
+        super().__init__() 
+        stride = 1
+        output_padding = 0
+        self.conv1 = Conv2d(in_ch,m, kernel_size = k, stride=stride, padding=1)
+        self.conv2 = Conv2d(m, m, kernel_size = k, stride=stride, padding=1)
+        self.tconv1 = ConvTranspose2d(m, m, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
+        self.tconv2 = ConvTranspose2d(2*m, in_ch, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+        
+    def forward(self, x):
+        x1 = self.relu(self.conv1(x))
+        x2 = self.relu(self.conv2(x1))
+        x3 = self.relu(self.tconv1(x2))
+        x4 = self.sigmoid(self.tconv2(torch.cat((x3,x1),1)))
+        return x4
+    
+class Net2(nn.Module):
+    def __init__(self,in_ch, m, k):
+        super().__init__() 
+        stride = 1
+        output_padding = 0
+        self.conv1 = Conv2d(in_ch,m, kernel_size = k, stride=stride, padding=1)
+        self.tconv1 = ConvTranspose2d(m, in_ch, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+        
+    def forward(self, x):
+        x1 = self.relu(self.conv1(x))
+        x2 = self.sigmoid(self.tconv1(x1))
+        return x2
+
+
+class Net(nn.Module):
+    def __init__(self,in_ch, m, k):
+        super().__init__() 
+        stride = 1
+        output_padding = 0
+        self.conv1 = Conv2d(in_ch,m, kernel_size = k, stride=stride, padding=1)
+        self.conv2 = Conv2d(m, m*2, kernel_size = k, stride=stride, padding=1)
+        self.conv3 = Conv2d(m*2, m*2, kernel_size = k, stride=stride, padding=1)
+        self.tconv1 = ConvTranspose2d(m*2, m*2, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
+        self.tconv2 = ConvTranspose2d(m*4, m, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
+        self.tconv3 = ConvTranspose2d(m*2, in_ch, kernel_size = k, stride=stride, padding=1, output_padding=output_padding)
+        
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+        
+    def forward(self, x):
+        x1 = self.relu(self.conv1(x))
+        x2 = self.relu(self.conv2(x1))
+        x3 = self.relu(self.conv3(x2))
+        x4 = self.relu(self.tconv1(x3))
+        x5 = self.relu(self.tconv2(torch.cat((x4,x2),1)))
+        x6 = self.sigmoid(self.tconv3(torch.cat((x5,x1),1)))
+        return x6
 
         
 class Model():
-    def __init__(self, device='cpu'):
+    def __init__(self, bs=10, m=10,  device='cpu'):
         self.device=device
         
-        self.batch_size = 1000
+        self.batch_size = bs
         self.in_ch = 3
-        self.m = 10
+        self.m = m
         self.k = 3
         
         # Instantiate model
