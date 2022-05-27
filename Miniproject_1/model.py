@@ -125,7 +125,7 @@ class Net(nn.Module):
 
         
 class Model():
-    def __init__(self, bs=10, m=10,  device='cpu'):
+    def __init__(self, bs=10, m=10, net=0,  device='cpu'):
         self.device=device
         
         self.batch_size = bs
@@ -134,7 +134,17 @@ class Model():
         self.k = 3
         
         # Instantiate model
-        self.model = Net(self.in_ch, self.m, self.k)
+        if net==0:
+            self.model = Net(self.in_ch, self.m, self.k)
+        elif net==2:
+            self.model = Net2(self.in_ch, self.m, self.k)
+        elif net==4:
+            self.model = Net4(self.in_ch, self.m, self.k)
+        elif net==6:
+            self.model = Net6(self.in_ch, self.m, self.k)
+        elif net==8:
+            self.model = Net8(self.in_ch, self.m, self.k)
+        
         self.model.to(self.device)
         
         # Optimizer
