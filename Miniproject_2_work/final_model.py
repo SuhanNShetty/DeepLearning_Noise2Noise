@@ -20,10 +20,10 @@ class Model():
         use_bias=True
         
         # Modules to be used, 2 Conv2d and 2 Upsampling or TransposeConv2d
-        self.conv1 = Conv2d(self.in_ch,self.m, kernel_size = (self.k,self.k), stride=stride, padding=padding, device=self.device, use_bias = use_bias)
-        self.conv2 = Conv2d(self.m, 2*self.m, kernel_size = (self.k,self.k), stride=stride, padding=padding, device=self.device, use_bias = use_bias)
-        self.tconv1 = TransposeConv2d(2*self.m, self.m, kernel_size = (self.k,self.k), stride=stride, padding=padding, device=self.device, output_padding=output_padding, use_bias = use_bias)
-        self.tconv2 = TransposeConv2d(self.m, self.in_ch, kernel_size = (self.k,self.k), stride=stride, padding=padding, device=self.device, output_padding=output_padding, use_bias = use_bias)
+        self.conv1 = Conv2d(self.in_ch,self.m, kernel_size = self.k, stride=stride, padding=padding, device=self.device, use_bias = use_bias)
+        self.conv2 = Conv2d(self.m, 2*self.m, kernel_size = self.k, stride=stride, padding=padding, device=self.device, use_bias = use_bias)
+        self.tconv1 = TransposeConv2d(2*self.m, self.m, kernel_size = self.k, stride=stride, padding=padding, device=self.device, output_padding=output_padding, use_bias = use_bias)
+        self.tconv2 = TransposeConv2d(self.m, self.in_ch, kernel_size = self.k, stride=stride, padding=padding, device=self.device, output_padding=output_padding, use_bias = use_bias)
         
         # Create the model using the Sequential
         self.model = Sequential(self.conv1,ReLU(),
@@ -66,14 +66,14 @@ class Model():
     def predict(self,noisy_imgs):
         # Retrieve images and prepare them
         noisy_imgs = noisy_imgs.clone().to(self.device).float()/256
-        return self.model.forward(noisy_imgs)
+        return (self.model.forward(noisy_imgs)*256).byte()
     
     def save_model(self):
-        path = 'test_model.pth'
+        path = 'bestmodel.pth'
         save(self.model, path)
         pass
     
     def load_model(self):
-        path = 'test_model.pth'
+        path = 'bestmodel.pth'
         self.model = load(path, map_location = self.device)
         pass
