@@ -14,6 +14,7 @@ if __name__ == "__main__" :
     p = Path('Miniproject_1')
     path = p / f if Path.is_dir(p) else f
     loading_model = False
+    saving_model = False
     
     model = Model()
     
@@ -28,7 +29,8 @@ if __name__ == "__main__" :
     
     model.train(noisy_imgs_1, noisy_imgs_2, 1)
     
-    torch.save(model.model.state_dict(), path)
+    if saving_model:
+        torch.save(model.model.state_dict(), path)
 else:
     from .model import Model
     

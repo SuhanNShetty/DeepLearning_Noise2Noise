@@ -2,12 +2,13 @@
 from torch import empty , cat , arange, save, load
 from torch.nn.functional import fold , unfold
 import math
-from pathlib import Path
-from tqdm import tqdm
+
+from pathlib import Path      # For saving and loading reasons
+from tqdm import tqdm         # For ease of use
         
 class Model():
     def __init__(self, device = 'cpu'):
-        # State the device to be cpu
+        # State the device
         self.device = device
 
         # State useful values for the modules
@@ -21,7 +22,7 @@ class Model():
         output_padding = 1
         use_bias=True
         
-        # Modules to be used, 2 Conv2d and 2 Upsampling or TransposeConv2d
+        # Modules to be used, 2 Conv2d and 2 TransposeConv2d
         self.conv1 = Conv2d(self.in_ch,self.m, kernel_size = self.k, stride=stride, padding=padding, device=self.device, use_bias = use_bias)
         self.conv2 = Conv2d(self.m, 2*self.m, kernel_size = self.k, stride=stride, padding=padding, device=self.device, use_bias = use_bias)
         self.tconv1 = TransposeConv2d(2*self.m, self.m, kernel_size = self.k, stride=stride, padding=padding, device=self.device, output_padding=output_padding, use_bias = use_bias)
@@ -47,7 +48,8 @@ class Model():
         noisy_imgs_2 = noisy_imgs_2.to(self.device).float()/256
         inp_1 = noisy_imgs_1.clone().split(self.batch_size)
         tar_1 = noisy_imgs_2.clone().split(self.batch_size)
-        # Prepare a torch to retrieve the loss during training
+        
+        # Prepare a tensor to retrieve the loss during training
         self.loss_train = empty(num_epochs).fill_(0).to(self.device)
         
         for e in tqdm(range(num_epochs)):
