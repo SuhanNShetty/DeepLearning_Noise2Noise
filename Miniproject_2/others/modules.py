@@ -1,9 +1,9 @@
 # Acceptable imports for project
-from torch import empty , cat , arange
+from torch import empty , cat , arange, save, load
 from torch.nn.functional import fold , unfold
 import math
 
-############################################################################
+############################################################ Modules ##############################################################
 # Sequential module
 class Sequential(object):
     '''
@@ -193,7 +193,7 @@ class Conv2d(object):
         # Initialization of the parameters
         bound = 1/((self.k**2*self.in_ch)**0.5)     # Bound for uniform
         self.weight = empty(out_ch, in_ch, self.k, self.k).uniform_(-bound, bound).to(self.device)
-        self.bias = empty(out_ch).uniform_(-bound, bound).to(self.device) if use_bias else empty(out_ch).fill_(0,1).to(self.device)
+        self.bias = empty(out_ch).uniform_(-bound, bound).to(self.device) if use_bias else empty(out_ch).fill_(0).to(self.device)
         # Initialization of the parameters' gradients
         self.grad_weight = 0*self.weight
         self.grad_bias = 0*self.bias
@@ -320,41 +320,3 @@ class TransposeConv2d(object):
         
     def param(self) :
         return ((self.weight, self.grad_weight), (self.bias, self.grad_bias))
-
-############################################################################
-# Upsampling module, which uses a transposed convolution
-class NearestUpsampling():
-    def __init__(self, in_ch, out_ch, kernel_size = 3, padding = 0, stride = 1, use_bias = False, device='cpu', output_padding = 0):
-        self.device = device
-        # Create a TransposeConv2d with same parameters
-        self.tconv = TransposeConv2d(in_ch, out_ch, kernel_size = kernel_size, padding = padding, stride = stride, use_bias = use_bias, device=self.device, output_padding = output_padding)
-        
-        # Create all needed parameters
-        self.weight = self.tconv.weight.to(self.device)
-        self.bias = self.tconv.bias.to(self.device)
-        self.grad_weight = self.tconv.grad_weight.to(self.device)
-        self.grad_bias = self.tconv.grad_bias.to(self.device)
-        self.use_bias = self.tconv.use_bias
-            
-    def zero_grad(self):
-        # Put all gradients to zero
-        self.tconv.grad_weight.fill_(0.)
-        if self.use_bias:
-            self.tconv.grad_bias.fill_(0.)
-                
-    def forward(self, x):
-        # Retrieve forward of TransposedConv
-        return self.tconv.forward(x)
-        
-    def backward(self, gradwrtoutput):
-        # Retrieve backward of TransposedConv
-        grad_in = self.tconv.backward(gradwrtoutput)
-        # Retrieve the weights and biases of TransposedConv
-        self.weight = self.tconv.weight.to(self.device)
-        self.bias = self.tconv.bias.to(self.device)
-        self.grad_weight = self.tconv.grad_weight.to(self.device)
-        self.grad_bias = self.tconv.grad_bias.to(self.device)
-        return grad_in
-        
-    def param(self):
-        return self.tconv.param()

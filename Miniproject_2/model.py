@@ -2,11 +2,17 @@
 from torch import empty , cat , arange, save, load
 from torch.nn.functional import fold , unfold
 import math
+from pathlib import Path
+from tqdm import tqdm
+
+# Import homemade modules
+# from .others.modules import *
         
 class Model():
-    def __init__(self):
+    def __init__(self, device = 'cpu'):
         # State the device to be cpu
-        self.device = 'cpu'
+        self.device = device
+
         # State useful values for the modules
         self.batch_size = 100
         self.in_ch = 3             # Input and last output channels
@@ -19,10 +25,10 @@ class Model():
         use_bias=True
         
         # Modules to be used, 2 Conv2d and 2 Upsampling or TransposeConv2d
-        self.conv1 = Conv2d(self.in_ch,self.m, kernel_size = (self.k,self.k), stride=stride, padding=padding, device=self.device, use_bias = use_bias)
-        self.conv2 = Conv2d(self.m, 2*self.m, kernel_size = (self.k,self.k), stride=stride, padding=padding, device=self.device, use_bias = use_bias)
-        self.tconv1 = TransposeConv2d(2*self.m, self.m, kernel_size = (self.k,self.k), stride=stride, padding=padding, device=self.device, output_padding=output_padding, use_bias = use_bias)
-        self.tconv2 = TransposeConv2d(self.m, self.in_ch, kernel_size = (self.k,self.k), stride=stride, padding=padding, device=self.device, output_padding=output_padding, use_bias = use_bias)
+        self.conv1 = Conv2d(self.in_ch,self.m, kernel_size = self.k, stride=stride, padding=padding, device=self.device, use_bias = use_bias)
+        self.conv2 = Conv2d(self.m, 2*self.m, kernel_size = self.k, stride=stride, padding=padding, device=self.device, use_bias = use_bias)
+        self.tconv1 = TransposeConv2d(2*self.m, self.m, kernel_size = self.k, stride=stride, padding=padding, device=self.device, output_padding=output_padding, use_bias = use_bias)
+        self.tconv2 = TransposeConv2d(self.m, self.in_ch, kernel_size = self.k, stride=stride, padding=padding, device=self.device, output_padding=output_padding, use_bias = use_bias)
         
         # Create the model using the Sequential
         self.model = Sequential(self.conv1,ReLU(),
@@ -38,15 +44,16 @@ class Model():
         # Create the loss
         self.mse = MSE()
         
-    def train(self,noisy_imgs_1, noisy_imgs_2, n_epochs):
+    def train(self,noisy_imgs_1, noisy_imgs_2, num_epochs = 10):
         # Retrieve images and prepare them
         noisy_imgs_1 = noisy_imgs_1.to(self.device).float()/256
         noisy_imgs_2 = noisy_imgs_2.to(self.device).float()/256
         inp_1 = noisy_imgs_1.clone().split(self.batch_size)
         tar_1 = noisy_imgs_2.clone().split(self.batch_size)
         # Prepare a torch to retrieve the loss during training
-        self.loss_train = empty(n_epochs).fill_(0).to(self.device)
-        for e in range(n_epochs):
+        self.loss_train = empty(num_epochs).fill_(0).to(self.device)
+        
+        for e in tqdm(range(num_epochs)):
             for i in (range(len(inp_1))):
                 # Retrieve output of the model
                 out = self.model.forward(inp_1[i])
@@ -65,17 +72,39 @@ class Model():
     def predict(self,noisy_imgs):
         # Retrieve images and prepare them
         noisy_imgs = noisy_imgs.clone().to(self.device).float()/256
-        return (self.model.forward(noisy_imgs)*256).int()
+        
+        return (self.model.forward(noisy_imgs)*256).byte()
+    
+    def save_dict(self, path):
+        dict = {}
+        for i, j in enumerate(self.model.transforms):
+            dict[str(i) + '_' + j.name] = (j.weight, j.bias)
+        save(dict, path)
+
+    def load_dict(self, path, device = 'cpu'):
+        
+        dict = load(path)
+        for i, j in enumerate(self.model.transforms):
+            j.weight= dict[str(i) + '_' + j.name][0].to(device)
+            j.bias = dict[str(i) + '_' + j.name][1].to(device)
+        
+        return self.model
     
     def save_model(self):
-        path = 'bestmodel.pth'
-        save(self.model, path)
-        pass
+        f = Path('bestmodel.pth')
+        p = Path('Miniproject_2')
+        path = p / f if Path.is_dir(p) else f
+
+        self.save_dict(path)
     
-    def load_model(self):
-        path = 'bestmodel.pth'
-        self.model = load(path, map_location = self.device)
-        pass
+    def load_pretrained_model(self):
+        f = Path('bestmodel.pth')
+        p = Path('Miniproject_2')
+        path = p / f if Path.is_dir(p) else f
+        
+
+        self.model = self.load_dict(path, device = self.device)
+
 
 ############################################################ Modules ##############################################################
 # Sequential module
@@ -255,22 +284,23 @@ class Sigmoid(object) :
 ############################################################################
 # Convolution module
 class Conv2d(object):
-    def __init__(self, in_ch, out_ch, kernel_size = (3,3), padding = 0, stride = 1, use_bias = False, device = 'cpu'):
+    def __init__(self, in_ch, out_ch, kernel_size = 3, padding = 0, stride = 1, use_bias = False, device = 'cpu'):
         self.name = "Conv2d"
         self.device =device
         self.use_bias = use_bias
         self.in_ch = in_ch               # Input channels
         self.out_ch = out_ch             # Output channels
-        self.k = kernel_size[0]          # Scalar kernel size
+        self.k = kernel_size             # Kernel size
         self.stride = stride
         self.padding = padding
         # Initialization of the parameters
         bound = 1/((self.k**2*self.in_ch)**0.5)     # Bound for uniform
         self.weight = empty(out_ch, in_ch, self.k, self.k).uniform_(-bound, bound).to(self.device)
-        self.bias = empty(out_ch).uniform_(-bound, bound).to(self.device) if use_bias else empty(out_ch).fill_(0,1).to(self.device)
+        self.bias = empty(out_ch).uniform_(-bound, bound).to(self.device) if use_bias else empty(out_ch).fill_(0).to(self.device)
         # Initialization of the parameters' gradients
         self.grad_weight = 0*self.weight
         self.grad_bias = 0*self.bias
+        
         
     def zero_grad(self):
         # Put all gradients to zero
@@ -326,13 +356,13 @@ class Conv2d(object):
 ############################################################################
 # Transposed convolution module
 class TransposeConv2d(object):
-    def __init__(self, in_ch, out_ch, kernel_size = (3,3), padding = 0, stride = 1, use_bias = False, device='cpu', output_padding = 0):
+    def __init__(self, in_ch, out_ch, kernel_size = 3, padding = 0, stride = 1, use_bias = False, device='cpu', output_padding = 0):
         self.name = "TransposeConv2d"
         self.device = device
         self.use_bias = use_bias
         self.in_ch = in_ch              # Input channels
         self.out_ch = out_ch            # Output channels
-        self.k = kernel_size[0]         # Scalar kernel size
+        self.k = kernel_size            # Kernel size
         self.stride = stride
         self.padding = padding
         # Initialization of the parameters
@@ -394,41 +424,3 @@ class TransposeConv2d(object):
         
     def param(self) :
         return ((self.weight, self.grad_weight), (self.bias, self.grad_bias))
-
-############################################################################
-# Upsampling module, which uses a transposed convolution
-class NearestUpsampling():
-    def __init__(self, in_ch, out_ch, kernel_size = (3,3), padding = 0, stride = 1, use_bias = False, device='cpu', output_padding = 0):
-        self.device = device
-        # Create a TransposeConv2d with same parameters
-        self.tconv = TransposeConv2d(in_ch, out_ch, kernel_size = kernel_size, padding = padding, stride = stride, use_bias = use_bias, device=self.device, output_padding = output_padding)
-        
-        # Create all needed parameters
-        self.weight = self.tconv.weight.to(self.device)
-        self.bias = self.tconv.bias.to(self.device)
-        self.grad_weight = self.tconv.grad_weight.to(self.device)
-        self.grad_bias = self.tconv.grad_bias.to(self.device)
-        self.use_bias = self.tconv.use_bias
-            
-    def zero_grad(self):
-        # Put all gradients to zero
-        self.tconv.grad_weight.fill_(0.)
-        if self.use_bias:
-            self.tconv.grad_bias.fill_(0.)
-                
-    def forward(self, x):
-        # Retrieve forward of TransposedConv
-        return self.tconv.forward(x)
-        
-    def backward(self, gradwrtoutput):
-        # Retrieve backward of TransposedConv
-        grad_in = self.tconv.backward(gradwrtoutput)
-        # Retrieve the weights and biases of TransposedConv
-        self.weight = self.tconv.weight.to(self.device)
-        self.bias = self.tconv.bias.to(self.device)
-        self.grad_weight = self.tconv.grad_weight.to(self.device)
-        self.grad_bias = self.tconv.grad_bias.to(self.device)
-        return grad_in
-        
-    def param(self):
-        return self.tconv.param()
