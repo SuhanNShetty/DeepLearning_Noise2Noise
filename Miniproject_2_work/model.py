@@ -96,7 +96,7 @@ class Model():
         self.save_dict(path)
     
     def load_pretrained_model(self):
-        f = Path('bestmodel.pth')
+        f = Path('model10.pth')
         p = Path('Miniproject_2')
         path = p / f if Path.is_dir(p) else f
         
