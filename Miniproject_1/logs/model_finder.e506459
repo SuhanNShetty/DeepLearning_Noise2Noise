@@ -1,9 +1,0 @@
-2022-05-27 11:03:58,371 INFO gridtk: Starting job 12: /idiap/temp/sshetty/miniconda/envs/pyml/bin/python model_finder.py --net 0
-Traceback (most recent call last):
-  File "/remote/idiap.svm/home.active/sshetty/Softwares/DeepLearning_Noise2Noise/Miniproject_1/model_finder.py", line 4, in <module>
-    from model import Model
-  File "/remote/idiap.svm/home.active/sshetty/Softwares/DeepLearning_Noise2Noise/Miniproject_1/model.py", line 148
-    self.model.to(self.device)
-    ^
-SyntaxError: invalid syntax
-2022-05-27 11:04:02,320 INFO gridtk: Job 12 finished with result 1

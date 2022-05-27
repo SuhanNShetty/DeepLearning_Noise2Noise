@@ -1,9 +1,0 @@
-2022-05-27 11:01:13,833 INFO gridtk: Starting job 10: /idiap/temp/sshetty/miniconda/envs/pyml/bin/python model_finder.py --net 0
-Traceback (most recent call last):
-  File "/remote/idiap.svm/home.active/sshetty/Softwares/DeepLearning_Noise2Noise/Miniproject_1/model_finder.py", line 4, in <module>
-    from model import Model
-  File "/remote/idiap.svm/home.active/sshetty/Softwares/DeepLearning_Noise2Noise/Miniproject_1/model.py", line 151
-    self.optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2) #SGD(self.model.parameters(), lr = 1, momentum=0.9)#
-    ^
-SyntaxError: invalid syntax
-2022-05-27 11:01:19,149 INFO gridtk: Job 10 finished with result 1
