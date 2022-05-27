@@ -1,18 +1,21 @@
-import torch.empty as empty
-import torch.nn.functional.fold as fold
-import torch.nn.functional.unfold as unfold
+from .model import Model
+import torch
 
-torch.set_grad_enabled(False)
+path_train = '../data/train_data.pkl'
+path_val = '../data/val_data.pkl'
+
+def compute_psnr(x, y, max_range=1.0):
+    assert x.shape == y.shape and x.ndim == 4
+    return 20 * torch.log10(torch.tensor(max_range)) - 10 * torch.log10(((x-y)**2).mean((1,2,3))).mean()
 
 if __name__ == "__main__" :
-    kernel_size = (2 , 2)
-    x = torch.randn((1 , 3 , 32 , 32) )
-    y = torch.randn((1 , 3 , 32 , 32) )
-    a = torch.randn((1 ,) )
+    
+    model = Model(device = 'cuda' if torch.cuda.is_available() else 'cpu')
 
-    out_channels = 4
-
-    conv = torch.nn.Conv2d( in_channels = x.shape[1], out_channels = out_channels, kernel_size = kernel_size, bias = False )
-
-    torch.testing.assert_allclose(a*conv(x) , conv(a*x))
-    torch.testing.assert_allclose(conv(x + y) , conv(x) + conv(y))
+    noisy_imgs_1, noisy_imgs_2 = torch.load(path_train)
+    noisy_imgs_1 = noisy_imgs_1
+    noisy_imgs_2 = noisy_imgs_2
+    noisy_imgs , clean_imgs = torch.load(path_val)
+    model.optimizer.lr = 1e-2
+    
+    model.train(noisy_imgs_1, noisy_imgs_2, 500)
