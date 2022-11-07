@@ -4,4 +4,6 @@ The implementation includes
  - Miniproject1: A noise2noise deep learning model using the full power of pytorch libraries for deep learning (optimizers, autograd, convolution, relu etc )
  - Miniproject2: The same noise2noise model is implemented using the tools developed from scatch (optimizers, autograd, convolution, etc)
 
+For details about implementaton, check the report*.pdf in the directory ./Proj_313934_312637_262247_epfl/
+
 Contributors: Louise Coppieters, Suhan Shetty, Frank Centamori  
